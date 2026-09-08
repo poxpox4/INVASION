@@ -146,6 +146,10 @@ public class GamePanel extends JPanel {
             g.setColor(Color.RED);
             g.setFont(new Font("Arial",Font.BOLD,40));
             g.drawString("DEFEATED", 300, 300);
+
+            g.setColor(Color.WHITE);
+            g.setFont(new Font("Arial", Font.BOLD, 20));
+            g.drawString("PRESS R TO RESTART", 298, 350);
         }
     }
     //actions w,a,s,d
@@ -258,6 +262,17 @@ public class GamePanel extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 spacefirepressed = false;
+            }
+        });
+        getInputMap(WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke("pressed R"), "restart");
+
+        getActionMap().put("restart", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (gameOver) {
+                    restartGame();
+                }
             }
         });
     }
@@ -451,5 +466,37 @@ public class GamePanel extends JPanel {
             }
         }
         
+    }
+    private void restartGame() {
+        // Player
+        playerX = 375;
+        playerY = 600;
+        playerHP = playerMaxHP;
+
+        // Game
+        gameOver = false;
+
+        // Bullet
+        bullets.clear();
+
+        // Enemy
+        enemies.clear();
+        enemyKilled = 0;
+        lastEnemySpawnTime = 0;
+
+        // Boss
+        boss = null;
+        bossSpawned = false;
+
+        // Warning
+        bossWarning = false;
+        bossWarningDead = false;
+
+        // ป้องกันสถานะปุ่มค้าง
+        upPressed = false;
+        downPressed = false;
+        leftPressed = false;
+        rightPressed = false;
+        spacefirepressed = false;
     }
 }
