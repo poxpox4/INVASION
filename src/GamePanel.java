@@ -34,6 +34,8 @@ public class GamePanel extends JPanel {
     boolean bossSpawned = false; //boss
     boolean bossWarning = false;
     boolean bossWarningDead = false;
+    long bossDeadTime = 0;
+    int bossDeadWarningDuration = 3000;
     long bossWarningTime = 0;
     int bossWarningDuration = 3000;
 
@@ -376,6 +378,7 @@ public class GamePanel extends JPanel {
                     if (boss.isDead()) {
                         boss = null;
                         bossWarningDead = true;
+                        bossDeadTime = System.currentTimeMillis();
                     }
                 }
             }
@@ -396,6 +399,12 @@ public class GamePanel extends JPanel {
             long currentTime = System.currentTimeMillis();
             if (currentTime - bossWarningTime >= bossWarningDuration) {
                 bossWarning = false;
+            }
+        }
+        if(bossWarningDead){
+            long currentTime = System.currentTimeMillis();
+            if(currentTime-bossDeadTime>=bossDeadWarningDuration){
+                bossWarningDead = false;
             }
         }
         
