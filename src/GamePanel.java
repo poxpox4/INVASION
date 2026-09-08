@@ -29,7 +29,15 @@ public class GamePanel extends JPanel {
     ArrayList<Enemy> enemies = new ArrayList<>();
     long lastEnemySpawnTime = 0;
     int enemySpawnDelay = 1000;
+    int enemyKilled = 0;
+    int enemyTarget = 20;
+    boolean bossSpawned = false; //boss
+    boolean bossWarning = false;
+    boolean bossWarningDead = false;
+    long bossWarningTime = 0;
+    int bossWarningDuration = 3000;
 
+    Boss boss = null;
     public GamePanel() {
 
         setPreferredSize(new Dimension(panelW, panelH)); //กำหนดขนาดพื้นที่เกม
@@ -84,6 +92,45 @@ public class GamePanel extends JPanel {
                 enemy.width,
                 enemy.height
             );
+        }
+        // Boss
+        if (boss != null) {
+
+            g.setColor(Color.MAGENTA);
+
+            g.fillRect(
+                boss.x,
+                boss.y,
+                boss.width,
+                boss.height
+            );
+        }
+        //text
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.BOLD, 20));
+        g.drawString(
+            "ENEMIES DESTROYED: " + enemyKilled,
+            20,
+            30
+        );
+        g.drawString(
+            "BOSS AT: 20 KILLS",
+            20,
+            55
+        );
+        if (bossWarning) {
+            g.setColor(Color.RED);
+            g.setFont(new Font("Arial", Font.BOLD, 40));
+            g.drawString(
+                "WARNING! BOSS INCOMING!",
+                130,
+                300
+            );
+        }
+        if(bossWarningDead){
+            g.setColor(Color.RED);
+            g.setFont(new Font("Arial",Font.BOLD,40));
+            g.drawString("BOSS DEFEATED", 250, 300);
         }
     }
     //actions w,a,s,d
@@ -212,6 +259,7 @@ public class GamePanel extends JPanel {
         bullets.add(new Bullet(bulletX, bulletY));
     }
     //collision ว่าชนหรือไม่ชน
+    //enemy
     private boolean isColliding(Bullet bullet, Enemy enemy) {
         Rectangle bulletRect = new Rectangle(
             bullet.x,
@@ -229,6 +277,24 @@ public class GamePanel extends JPanel {
 
         return bulletRect.intersects(enemyRect);
     }
+    //collision boss
+    private boolean isColliding(Bullet bullet, Boss boss) {
+        Rectangle bulletRect = new Rectangle(
+            bullet.x,
+            bullet.y,
+            bullet.width,
+            bullet.height
+        );
+
+        Rectangle bossRect = new Rectangle(
+            boss.x,
+            boss.y,
+            boss.width,
+            boss.height
+        );
+
+        return bulletRect.intersects(bossRect);
+    }
     //spawnenemy
     private void spawnEnemy() {
         long currentTime = System.currentTimeMillis();
@@ -236,12 +302,22 @@ public class GamePanel extends JPanel {
             return;
         }
         lastEnemySpawnTime = currentTime;
-        int enemyX = (int)(Math.random() * (panelW - 40));
-        enemies.add(new Enemy(enemyX, -40));
+        Enemy enemy = new Enemy(0,0);
+        int enemyX = (int)(Math.random() * (panelW - enemy.width));
+        enemies.add(new Enemy(enemyX, -enemy.height));
+    }
+    //spawnboss
+    private void spawnBoss() {
+        boss = new Boss(0, 0);
+        boss.x = panelW / 2 - boss.width / 2;
+        boss.y = -boss.height;
     }
     //method update
     private void updateGame() {
         spawnEnemy();
+        if (enemyKilled < enemyTarget) {
+            // spawnEnemy();
+        }
         if (upPressed) { //w
             playerY -= playerSpeed;
             if(playerY<0) playerY=0;
@@ -266,9 +342,10 @@ public class GamePanel extends JPanel {
             bullet.move();
             if(bullet.y+bullet.height<0){
                 bullets.remove(i); //ลบกระสุน
-                // continue;
+                continue;
             } 
-            //collision
+            boolean bulletHit = false;
+            //collision enemy
             for (int j = enemies.size() - 1; j >= 0; j--) {
                 Enemy enemy = enemies.get(j);
                 if (isColliding(bullet, enemy)) {
@@ -276,8 +353,30 @@ public class GamePanel extends JPanel {
                     enemy.takeDamage(1);// Enemy เสีย HP 1
                     if(enemy.isDead()){// ถ้า HP หมด
                         enemies.remove(j);
+                        enemyKilled++;
+                        if (enemyKilled >= enemyTarget && !bossSpawned) {
+                            bossSpawned = true;
+                            bossWarning = true;
+                            bossWarningTime = System.currentTimeMillis();
+                            spawnBoss();
+                        }
                     }
+                    bulletHit = true; //กันกระสุนชนenemyกับbossพร้อมกัน
                     break;
+                }
+            }
+            //bullet hit boss
+            if (!bulletHit && boss != null) {
+                if (isColliding(bullet, boss)) {
+                    // ลบกระสุน
+                    bullets.remove(i);
+                    // ลดเลือด Boss
+                    boss.takeDamage(1);
+                    // Boss ตาย
+                    if (boss.isDead()) {
+                        boss = null;
+                        bossWarningDead = true;
+                    }
                 }
             }
         }
@@ -287,6 +386,16 @@ public class GamePanel extends JPanel {
             enemy.move();
             if (enemy.y > panelH) {
                 enemies.remove(i);
+            }
+        }
+        //boss
+        if (boss != null) {
+            boss.move();
+        }
+        if (bossWarning) {
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - bossWarningTime >= bossWarningDuration) {
+                bossWarning = false;
             }
         }
         

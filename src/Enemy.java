@@ -6,7 +6,7 @@ public class Enemy {
     int width = 40;
     int height = 40;
     //speed/
-    int speed = 3;
+    int speed = 2;
     //hp
     int hp = 3;
 
