@@ -27,6 +27,8 @@ public class GamePanel extends JPanel {
     boolean spacefirepressed = false;
     //Enemy
     ArrayList<Enemy> enemies = new ArrayList<>();
+    long lastEnemySpawnTime = 0;
+    int enemySpawnDelay = 1000;
 
     public GamePanel() {
 
@@ -35,8 +37,8 @@ public class GamePanel extends JPanel {
 
         setupKeyBindings();
 
-        enemies.add(new Enemy(300, 0));
-        enemies.add(new Enemy(500, 100));
+        // enemies.add(new Enemy(300, 0));
+        // enemies.add(new Enemy(500, 100));
 
         //เกมจะ Update ประมาณ 60 FPS
         timer = new Timer(16, e -> {
@@ -227,8 +229,19 @@ public class GamePanel extends JPanel {
 
         return bulletRect.intersects(enemyRect);
     }
+    //spawnenemy
+    private void spawnEnemy() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastEnemySpawnTime < enemySpawnDelay) {
+            return;
+        }
+        lastEnemySpawnTime = currentTime;
+        int enemyX = (int)(Math.random() * (panelW - 40));
+        enemies.add(new Enemy(enemyX, -40));
+    }
     //method update
     private void updateGame() {
+        spawnEnemy();
         if (upPressed) { //w
             playerY -= playerSpeed;
             if(playerY<0) playerY=0;
