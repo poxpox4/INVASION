@@ -9,9 +9,11 @@ public class GamePanel extends JPanel {
     //size
     int playerWidth = 50;
     int playerHeight = 50;
-
-    int playerSpeed = 10;
-
+    int playerSpeed = 10;//speed
+    //player hp
+    int playerHP = 10;
+    int playerMaxHP = 10;
+    boolean gameOver = false;
     int panelW = 800,panelH = 750;
 
     ArrayList<Bullet> bullets = new ArrayList<>();
@@ -133,6 +135,17 @@ public class GamePanel extends JPanel {
             g.setColor(Color.RED);
             g.setFont(new Font("Arial",Font.BOLD,40));
             g.drawString("BOSS DEFEATED", 250, 300);
+        }
+        g.setColor(Color.WHITE);
+        g.drawString(
+            "HP: " + playerHP + "/" + playerMaxHP,
+            650,
+            30
+        );
+        if(gameOver){
+            g.setColor(Color.RED);
+            g.setFont(new Font("Arial",Font.BOLD,40));
+            g.drawString("DEFEATED", 300, 300);
         }
     }
     //actions w,a,s,d
@@ -297,6 +310,24 @@ public class GamePanel extends JPanel {
 
         return bulletRect.intersects(bossRect);
     }
+    //collision player
+    private boolean isColliding(Enemy enemy) {
+        Rectangle enemyRect = new Rectangle(
+            enemy.x,
+            enemy.y,
+            enemy.width,
+            enemy.height
+        );
+
+        Rectangle playerRect = new Rectangle(
+            playerX,
+            playerY,
+            playerWidth,
+            playerHeight
+        );
+
+        return enemyRect.intersects(playerRect);
+    }
     //spawnenemy
     private void spawnEnemy() {
         long currentTime = System.currentTimeMillis();
@@ -316,6 +347,9 @@ public class GamePanel extends JPanel {
     }
     //method update
     private void updateGame() {
+        if(gameOver){
+            return ;
+        }
         spawnEnemy();
         if (enemyKilled < enemyTarget) {
             // spawnEnemy();
@@ -387,6 +421,15 @@ public class GamePanel extends JPanel {
         for (int i = enemies.size() - 1; i >= 0; i--) {
             Enemy enemy = enemies.get(i);
             enemy.move();
+            if(isColliding(enemy)){//enemy ชน player
+                playerHP--;
+                if(playerHP<=0){
+                    playerHP=0;
+                    gameOver = true;
+                }
+                enemies.remove(i);
+                continue;
+            }
             if (enemy.y > panelH) {
                 enemies.remove(i);
             }
