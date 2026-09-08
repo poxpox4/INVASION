@@ -25,12 +25,19 @@ public class GamePanel extends JPanel {
     boolean leftPressed = false;
     boolean rightPressed = false;
     boolean spacefirepressed = false;
+    //Enemy
+    ArrayList<Enemy> enemies = new ArrayList<>();
+
     public GamePanel() {
 
         setPreferredSize(new Dimension(panelW, panelH)); //กำหนดขนาดพื้นที่เกม
         setBackground(Color.BLACK);
 
         setupKeyBindings();
+
+        enemies.add(new Enemy(300, 0));
+        enemies.add(new Enemy(500, 100));
+
         //เกมจะ Update ประมาณ 60 FPS
         timer = new Timer(16, e -> {
 
@@ -64,6 +71,17 @@ public class GamePanel extends JPanel {
                 bullets.get(i).y,
                 bullets.get(i).width,
                 bullets.get(i).height);
+        }
+        //Enemy
+        g.setColor(Color.RED);
+        for (int i = 0; i < enemies.size(); i++) {
+            Enemy enemy = enemies.get(i);
+            g.fillRect(
+                enemy.x,
+                enemy.y,
+                enemy.width,
+                enemy.height
+            );
         }
     }
     //actions w,a,s,d
@@ -191,6 +209,24 @@ public class GamePanel extends JPanel {
         int bulletY = playerY;
         bullets.add(new Bullet(bulletX, bulletY));
     }
+    //collision ว่าชนหรือไม่ชน
+    private boolean isColliding(Bullet bullet, Enemy enemy) {
+        Rectangle bulletRect = new Rectangle(
+            bullet.x,
+            bullet.y,
+            bullet.width,
+            bullet.height
+        );
+
+        Rectangle enemyRect = new Rectangle(
+            enemy.x,
+            enemy.y,
+            enemy.width,
+            enemy.height
+        );
+
+        return bulletRect.intersects(enemyRect);
+    }
     //method update
     private void updateGame() {
         if (upPressed) { //w
@@ -212,10 +248,33 @@ public class GamePanel extends JPanel {
         if(spacefirepressed){ //spacefire
             shoot();
         }
-        for (int i = bullets.size()-1;i>=0;i--) { //bullets
+        for (int i = bullets.size()-1;i>=0;i--) { //bullets + collsision
             Bullet bullet = bullets.get(i);
             bullet.move();
-            if(bullet.y+bullet.height<0) bullets.remove(i); //ลบกระสุน
+            if(bullet.y+bullet.height<0){
+                bullets.remove(i); //ลบกระสุน
+                // continue;
+            } 
+            //collision
+            for (int j = enemies.size() - 1; j >= 0; j--) {
+                Enemy enemy = enemies.get(j);
+                if (isColliding(bullet, enemy)) {
+                    bullets.remove(i);
+                    enemy.takeDamage(1);// Enemy เสีย HP 1
+                    if(enemy.isDead()){// ถ้า HP หมด
+                        enemies.remove(j);
+                    }
+                    break;
+                }
+            }
+        }
+        //enemy
+        for (int i = enemies.size() - 1; i >= 0; i--) {
+            Enemy enemy = enemies.get(i);
+            enemy.move();
+            if (enemy.y > panelH) {
+                enemies.remove(i);
+            }
         }
         
     }
