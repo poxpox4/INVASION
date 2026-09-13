@@ -10,7 +10,7 @@ public class GrayShip extends Ship {
             playerX+playerWidth/2-15,playerY
         );
         Bullet bullet2 = new Bullet(
-            playerX+playerWidth/2+5,playerY
+            playerX+playerWidth/2+8,playerY
         );
         bullets.add(bullet1);
         bullets.add(bullet2);

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 public class GamePanel extends JPanel {
     //select ship
     Ship playerShip;
+    Image playerImage;
     //ตน.
     int playerX = 375;
     int playerY = 600; //ค่ายิ่งเยอะยิ่งอยู่ข้างล่างก
@@ -54,6 +55,12 @@ public class GamePanel extends JPanel {
     public GamePanel(Ship playerShip) {
         this.playerShip = playerShip;
         if(playerShip==null)return ;
+        if(playerShip instanceof RedShip){
+            playerImage = new ImageIcon("images/redship.png").getImage();
+        }
+        else if(playerShip instanceof GrayShip){
+            playerImage = new ImageIcon("images/grayship.png").getImage();
+        }
 
         setPreferredSize(new Dimension(panelW, panelH)); //กำหนดขนาดพื้นที่เกม
         setBackground(Color.BLACK);
@@ -74,14 +81,8 @@ public class GamePanel extends JPanel {
         //Graphics g ปากกาวาด
         super.paintComponent(g); //สั่งให้ JPanel วาดพื้นหลังก่อน
 
-        //ยานชั่วคราว
-        g.setColor(Color.CYAN);
-        g.fillRect(
-                playerX,
-                playerY,
-                playerWidth,
-                playerHeight
-        );
+        //player ship
+        g.drawImage(playerImage, playerX, playerY, playerWidth,playerHeight,this);
         //player bullets
         g.setColor(Color.YELLOW);
         for(int i=0;i<bullets.size();i++){
@@ -556,7 +557,12 @@ public class GamePanel extends JPanel {
         Ship newShip = ShipSelection.selectShip();
         if(newShip==null)return ;
         playerShip = newShip;
-        
+        if(playerShip instanceof RedShip){
+            playerImage = new ImageIcon("images/redship.png").getImage();
+        }
+        else if(playerShip instanceof GrayShip){
+            playerImage = new ImageIcon("images/grayship.png").getImage();
+        }
         // Player
         playerX = 375;
         playerY = 600;
