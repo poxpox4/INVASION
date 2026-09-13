@@ -10,8 +10,8 @@ public class GamePanel extends JPanel {
     int playerX = 375;
     int playerY = 600; //ค่ายิ่งเยอะยิ่งอยู่ข้างล่างก
     //size
-    int playerWidth = 50;
-    int playerHeight = 50;
+    int playerWidth = 60;
+    int playerHeight = 60;
     int playerSpeed = 10;//speed
     //player hp
     int playerHP = 10;
@@ -25,7 +25,7 @@ public class GamePanel extends JPanel {
     ArrayList<Bullet> bullets = new ArrayList<>();//player bullet
     ArrayList<BossBullet> bossBullets = new ArrayList<>();//boss bullet
     long lastShotTime = 0; //เก็บเวลาที่เรายิงครั้งล่าสุด
-    int fireDelay = 150; //ต้องรอ 150 มิลลิวินาทีก่อนยิงนัดต่อไป
+    // int fireDelay = 150; //ต้องรอ 150 มิลลิวินาทีก่อนยิงนัดต่อไป
     // Bullet bullet = new Bullet(); 
     Timer timer;
     //ตัวแปรเก็บสถานะปุ่ม
@@ -39,7 +39,7 @@ public class GamePanel extends JPanel {
     long lastEnemySpawnTime = 0;
     int enemySpawnDelay = 1000;
     int enemyKilled = 0;
-    int enemyTarget = 20;
+    int enemyTarget = 2;
     boolean bossSpawned = false; //boss
     boolean bossWarning = false;
     boolean bossWarningDead = false;
@@ -330,13 +330,13 @@ public class GamePanel extends JPanel {
         int bulletX1 = boss.x+boss.width/2-20;
         int bulletX2 = boss.x+boss.width/2;
         int bulletX3 = boss.x+boss.width/2+20;
-        int bulletY = boss.y+boss.height;
+        int bulletY = boss.y+boss.height+50;
         bossBullets.add(new BossBullet(bulletX1, bulletY,-1));//l
         bossBullets.add(new BossBullet(bulletX2, bulletY,0));//c
         bossBullets.add(new BossBullet(bulletX3, bulletY,1));//r
     }
     //collision ว่าชนหรือไม่ชน
-    //enemy
+    //bullet collision enemy
     private boolean isColliding(Bullet bullet, Enemy enemy) {
         Rectangle bulletRect = new Rectangle(
             bullet.x,
@@ -354,7 +354,7 @@ public class GamePanel extends JPanel {
 
         return bulletRect.intersects(enemyRect);
     }
-    //collision boss
+    //bullet collision boss
     private boolean isColliding(Bullet bullet, Boss boss) {
         Rectangle bulletRect = new Rectangle(
             bullet.x,
@@ -365,14 +365,32 @@ public class GamePanel extends JPanel {
 
         Rectangle bossRect = new Rectangle(
             boss.x,
-            boss.y,
+            boss.y+50,
             boss.width,
             boss.height
         );
 
         return bulletRect.intersects(bossRect);
     }
-    //collision player
+    //boss collision player
+    private boolean isColliding(Boss boss) {
+        Rectangle playerRect = new Rectangle(
+            playerX,
+            playerY,
+            playerWidth,
+            playerHeight
+        );
+
+        Rectangle bossRect = new Rectangle(
+            boss.x,
+            boss.y + 50,
+            boss.width,
+            boss.height
+        );
+
+        return playerRect.intersects(bossRect);
+    }
+    //enemy collision player
     private boolean isColliding(Enemy enemy) {
         Rectangle enemyRect = new Rectangle(
             enemy.x,
@@ -423,15 +441,24 @@ public class GamePanel extends JPanel {
         boss.x = panelW / 2 - boss.width / 2;
         boss.y = -boss.height ;
     }
+    private void updateBossPhase(){
+        if(boss==null)return ;
+        if(boss.hp>15&&boss.hp<=30){
+            bossFireDelay = 700;
+        }
+        else if(boss.hp>0&&boss.hp<=15){
+            bossFireDelay = 500;
+        }
+        else{
+            bossFireDelay = 1000;
+        }
+    }
     //method update
     private void updateGame() {
         if(gameOver||gameWin){
             return ;
         }
         spawnEnemy();
-        // if (enemyKilled < enemyTarget) {
-            // spawnEnemy();
-        // }
         if (upPressed) { //w
             playerY -= playerSpeed;
             if(playerY<0) playerY=0;
@@ -450,6 +477,13 @@ public class GamePanel extends JPanel {
         }
         if(spacefirepressed){ //spacefire
             shoot();
+        }
+        if (boss != null && isColliding(boss)) {
+            playerHP--;
+
+            if (playerHP <= 0) {
+                gameOver = true;
+            }
         }
         for (int i = bullets.size()-1;i>=0;i--) { //bullets + collsision
             Bullet bullet = bullets.get(i);
@@ -479,11 +513,6 @@ public class GamePanel extends JPanel {
                     break;
                 }
             }
-            // //boss bullet
-            // for(int i=bossBullets.size()-1;i>=0;i--){
-            //     BossBullet bullet = bossBullets.get(i);
-                
-            // }
             //bullet hit boss
             if (!bulletHit && boss != null) {
                 if (isColliding(bullet, boss)) {
@@ -537,6 +566,7 @@ public class GamePanel extends JPanel {
         //boss
         if (boss != null) {
             boss.move();
+            updateBossPhase();
             bossShoot();
         }
         if (bossWarning) {
@@ -584,6 +614,8 @@ public class GamePanel extends JPanel {
         // Boss
         boss = null;
         bossSpawned = false;
+        bossFireDelay = 1000;
+        lastBossShotTime = 0;
 
         // Warning
         bossWarning = false;
