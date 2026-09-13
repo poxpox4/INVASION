@@ -5,7 +5,7 @@ import java.util.ArrayList;
 public class GamePanel extends JPanel {
     //ตน.
     int playerX = 375;
-    int playerY = 600; //ค่ายิ่งเยอะยิ่งอยู่ข้างล่าง
+    int playerY = 600; //ค่ายิ่งเยอะยิ่งอยู่ข้างล่างก
     //size
     int playerWidth = 50;
     int playerHeight = 50;
@@ -54,11 +54,8 @@ public class GamePanel extends JPanel {
 
         //เกมจะ Update ประมาณ 60 FPS
         timer = new Timer(16, e -> {
-
             updateGame();
-
             repaint();
-
         });
 
         timer.start();
@@ -99,12 +96,29 @@ public class GamePanel extends JPanel {
         }
         // Boss
         if (boss != null) {
+            int barWidth = 350,barHeight = 20;
+            int barX = (panelW-barWidth)/2,barY = 55;
+            //bg hp
+            g.setColor(Color.DARK_GRAY);
+            g.fillRect(barX, barY, barWidth, barHeight);
+            //hpที่เหลือ
+            int hpWidth = (int)((double)boss.hp/50*barWidth);
+            g.setColor(Color.RED);
+            g.fillRect(barX, barY, hpWidth, barHeight);
+            //ขอบ
+            g.setColor(Color.WHITE);
+            g.drawRect(barX, barY, hpWidth, barHeight);
 
+            g.setFont(new Font("Arial", Font.BOLD, 18));
+            g.drawString(
+                "BOSS HP: " + boss.hp + "/50",
+                barX+100,
+                barY -2
+            );
             g.setColor(Color.MAGENTA);
-
             g.fillRect(
                 boss.x,
-                boss.y,
+                boss.y+50,
                 boss.width,
                 boss.height
             );
@@ -122,6 +136,12 @@ public class GamePanel extends JPanel {
             20,
             55
         );
+        g.setColor(Color.WHITE);
+        g.drawString(
+            "HP: " + playerHP + "/" + playerMaxHP,
+            650,
+            30
+        );
         if (bossWarning) {
             g.setColor(Color.RED);
             g.setFont(new Font("Arial", Font.BOLD, 40));
@@ -136,12 +156,7 @@ public class GamePanel extends JPanel {
             g.setFont(new Font("Arial",Font.BOLD,40));
             g.drawString("BOSS DEFEATED", 250, 300);
         }
-        g.setColor(Color.WHITE);
-        g.drawString(
-            "HP: " + playerHP + "/" + playerMaxHP,
-            650,
-            30
-        );
+        
         if(gameOver){
             g.setColor(Color.RED);
             g.setFont(new Font("Arial",Font.BOLD,40));
@@ -358,7 +373,7 @@ public class GamePanel extends JPanel {
     private void spawnBoss() {
         boss = new Boss(0, 0);
         boss.x = panelW / 2 - boss.width / 2;
-        boss.y = -boss.height;
+        boss.y = -boss.height ;
     }
     //method update
     private void updateGame() {
@@ -366,9 +381,9 @@ public class GamePanel extends JPanel {
             return ;
         }
         spawnEnemy();
-        if (enemyKilled < enemyTarget) {
+        // if (enemyKilled < enemyTarget) {
             // spawnEnemy();
-        }
+        // }
         if (upPressed) { //w
             playerY -= playerSpeed;
             if(playerY<0) playerY=0;
