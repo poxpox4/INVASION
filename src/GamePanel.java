@@ -204,9 +204,6 @@ public class GamePanel extends JPanel {
         getActionMap().put("moveUp", new AbstractAction() { //new AbstractAction() สร้าง Action ใหม่ขึ้นมา
             @Override
             public void actionPerformed(ActionEvent e) { //ทำงานเมื่อ Action ถูกเรียก
-                // playerY -= playerSpeed;
-                // if(playerY<0) playerY=0; //ห้านเกินด้านบน
-                // repaint();//วาดใหม่
                 upPressed = true;
             }
         });
@@ -227,9 +224,6 @@ public class GamePanel extends JPanel {
         getActionMap().put("moveDown", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // playerY += playerSpeed;
-                // if(playerY+playerHeight>panelH) playerY=panelH-playerHeight; //ห้ามเกินด้านล่าง
-                // repaint();
                 downPressed = true;
             }
         });
@@ -249,9 +243,6 @@ public class GamePanel extends JPanel {
         getActionMap().put("moveLeft", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // playerX -= playerSpeed;
-                // if(playerX<0)playerX=0; //ห้ามเกินด้านซ้าย
-                // repaint();
                 leftPressed = true;
             }
         });
@@ -325,10 +316,6 @@ public class GamePanel extends JPanel {
             return;
         }
         lastShotTime = currentTime;
-        // Bullet bullet = new Bullet();
-        // int bulletX = playerX + playerWidth / 2 - bullet.width / 2; //กระสุนออกกลางยาน
-        // int bulletY = playerY;
-        // bullets.add(new Bullet(bulletX, bulletY));
         playerShip.shoot(playerX,playerY,playerWidth,bullets);
     }
     //method ยิง for boss
@@ -566,6 +553,10 @@ public class GamePanel extends JPanel {
         
     }
     private void restartGame() {
+        Ship newShip = ShipSelection.selectShip();
+        if(newShip==null)return ;
+        playerShip = newShip;
+        
         // Player
         playerX = 375;
         playerY = 600;

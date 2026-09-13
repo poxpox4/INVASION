@@ -6,7 +6,7 @@ public class RedShip extends Ship {
     @Override 
     public void shoot(int playerX,int playerY,int playerWidth,ArrayList<Bullet> bullets){
         Bullet bullet = new Bullet(
-            playerX+playerWidth/2,playerY
+            playerX+playerWidth/2-5,playerY
         );
         bullets.add(bullet);
     }
