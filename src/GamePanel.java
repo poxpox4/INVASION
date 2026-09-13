@@ -3,6 +3,8 @@ import java.awt.event.ActionEvent; //รับevent ตอนactionทำงา�
 import java.awt.*; //นำ Class ต่าง ๆ เกี่ยวกับกราฟิกมาใช้
 import java.util.ArrayList;
 public class GamePanel extends JPanel {
+    //select ship
+    Ship playerShip;
     //ตน.
     int playerX = 375;
     int playerY = 600; //ค่ายิ่งเยอะยิ่งอยู่ข้างล่างก
@@ -49,15 +51,14 @@ public class GamePanel extends JPanel {
     long lastBossShotTime = 0;
     int bossFireDelay = 1000;
 
-    public GamePanel() {
+    public GamePanel(Ship playerShip) {
+        this.playerShip = playerShip;
+        if(playerShip==null)return ;
 
         setPreferredSize(new Dimension(panelW, panelH)); //กำหนดขนาดพื้นที่เกม
         setBackground(Color.BLACK);
 
         setupKeyBindings();
-
-        // enemies.add(new Enemy(300, 0));
-        // enemies.add(new Enemy(500, 100));
 
         //เกมจะ Update ประมาณ 60 FPS
         timer = new Timer(16, e -> {
@@ -320,14 +321,15 @@ public class GamePanel extends JPanel {
     //method ยิง for player
     private void shoot() {
         long currentTime = System.currentTimeMillis();//เวลาปัจจุบันของเครื่อง
-        if (currentTime - lastShotTime < fireDelay) { //ตรวจเวลาระหว่างการยิง
+        if (currentTime - lastShotTime < playerShip.getFireDelay()) { //ตรวจเวลาระหว่างการยิง
             return;
         }
         lastShotTime = currentTime;
-        Bullet bullet = new Bullet();
-        int bulletX = playerX + playerWidth / 2 - bullet.width / 2; //กระสุนออกกลางยาน
-        int bulletY = playerY;
-        bullets.add(new Bullet(bulletX, bulletY));
+        // Bullet bullet = new Bullet();
+        // int bulletX = playerX + playerWidth / 2 - bullet.width / 2; //กระสุนออกกลางยาน
+        // int bulletY = playerY;
+        // bullets.add(new Bullet(bulletX, bulletY));
+        playerShip.shoot(playerX,playerY,playerWidth,bullets);
     }
     //method ยิง for boss
     private void bossShoot(){

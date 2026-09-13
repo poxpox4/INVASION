@@ -2,7 +2,7 @@ import javax.swing.JFrame;
 // หน้าต่างโปรแกรม
 public class GameFrame extends JFrame {
 
-    public GameFrame() {
+    public GameFrame(Ship playerShip) {
 
         setTitle("INVASION");
 
@@ -10,7 +10,7 @@ public class GameFrame extends JFrame {
 
         setResizable(false); //ลากขยายหน้าจอ
 
-        GamePanel gamePanel = new GamePanel(); //พื้นที่วาดเกม
+        GamePanel gamePanel = new GamePanel(playerShip); //พื้นที่วาดเกม
 
         add(gamePanel);
 
