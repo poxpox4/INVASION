@@ -13,7 +13,10 @@ public class GamePanel extends JPanel {
     //player hp
     int playerHP = 10;
     int playerMaxHP = 10;
+
     boolean gameOver = false;
+    boolean gameWin = false;
+
     int panelW = 800,panelH = 750;
 
     ArrayList<Bullet> bullets = new ArrayList<>();//player bullet
@@ -165,10 +168,19 @@ public class GamePanel extends JPanel {
                 300
             );
         }
-        if(bossWarningDead){
-            g.setColor(Color.RED);
+        if(gameWin){
+            g.setColor(Color.GREEN);
             g.setFont(new Font("Arial",Font.BOLD,40));
-            g.drawString("BOSS DEFEATED", 250, 300);
+            g.drawString("VICTORY!", 320, 300);
+            
+            g.setColor(Color.WHITE);
+            g.setFont(new Font("Arial", Font.BOLD, 20));
+            g.drawString("PRESS R TO RESTART", 310, 380);
+        }
+        if(bossWarningDead){
+            g.setColor(Color.WHITE);
+            g.setFont(new Font("Arial",Font.BOLD,40));
+            g.drawString("YOU DEFEATED THE BOSS!", 160, 350);
         }
         
         if(gameOver){
@@ -299,7 +311,7 @@ public class GamePanel extends JPanel {
         getActionMap().put("restart", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (gameOver) {
+                if (gameOver||gameWin) {
                     restartGame();
                 }
             }
@@ -325,10 +337,13 @@ public class GamePanel extends JPanel {
             return ;
         }
         lastBossShotTime = currentTime;
-
-        int bulletX = boss.x+boss.width/2;
+        int bulletX1 = boss.x+boss.width/2-20;
+        int bulletX2 = boss.x+boss.width/2;
+        int bulletX3 = boss.x+boss.width/2+20;
         int bulletY = boss.y+boss.height;
-        bossBullets.add(new BossBullet(bulletX, bulletY));
+        bossBullets.add(new BossBullet(bulletX1, bulletY,-1));//l
+        bossBullets.add(new BossBullet(bulletX2, bulletY,0));//c
+        bossBullets.add(new BossBullet(bulletX3, bulletY,1));//r
     }
     //collision ว่าชนหรือไม่ชน
     //enemy
@@ -420,7 +435,7 @@ public class GamePanel extends JPanel {
     }
     //method update
     private void updateGame() {
-        if(gameOver){
+        if(gameOver||gameWin){
             return ;
         }
         spawnEnemy();
@@ -490,6 +505,7 @@ public class GamePanel extends JPanel {
                     if (boss.isDead()) {
                         boss = null;
                         bossWarningDead = true;
+                        gameWin = true;
                         bossDeadTime = System.currentTimeMillis();
                     }
                 }
@@ -555,6 +571,7 @@ public class GamePanel extends JPanel {
 
         // Game
         gameOver = false;
+        gameWin = false;
 
         // Bullet
         bullets.clear();

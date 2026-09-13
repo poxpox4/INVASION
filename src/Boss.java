@@ -5,7 +5,8 @@ public class Boss {
     int width = 150;
     int height = 100;
 
-    int speed = 2;
+    int speed = 3;
+    int direction = 1;
 
     int hp = 50;
 
@@ -18,6 +19,15 @@ public class Boss {
 
         if (y < 50) {
             y += speed;
+        }
+        x += direction*speed;//ขยับซ้าย/ขวา
+        if(x<=0){//ขอบซ้าย
+            x = 0;
+            direction = 1;
+        }
+        if(x+width>=800){//ขอบขวา
+            x = 800-width;
+            direction = -1;
         }
     }
 
