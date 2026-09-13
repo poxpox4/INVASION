@@ -16,7 +16,8 @@ public class GamePanel extends JPanel {
     boolean gameOver = false;
     int panelW = 800,panelH = 750;
 
-    ArrayList<Bullet> bullets = new ArrayList<>();
+    ArrayList<Bullet> bullets = new ArrayList<>();//player bullet
+    ArrayList<BossBullet> bossBullets = new ArrayList<>();//boss bullet
     long lastShotTime = 0; //เก็บเวลาที่เรายิงครั้งล่าสุด
     int fireDelay = 150; //ต้องรอ 150 มิลลิวินาทีก่อนยิงนัดต่อไป
     // Bullet bullet = new Bullet(); 
@@ -40,8 +41,11 @@ public class GamePanel extends JPanel {
     int bossDeadWarningDuration = 3000;
     long bossWarningTime = 0;
     int bossWarningDuration = 3000;
-
+    //boss
     Boss boss = null;
+    long lastBossShotTime = 0;
+    int bossFireDelay = 1000;
+
     public GamePanel() {
 
         setPreferredSize(new Dimension(panelW, panelH)); //กำหนดขนาดพื้นที่เกม
@@ -74,7 +78,7 @@ public class GamePanel extends JPanel {
                 playerWidth,
                 playerHeight
         );
-        //bullets
+        //player bullets
         g.setColor(Color.YELLOW);
         for(int i=0;i<bullets.size();i++){
             g.fillRect(
@@ -82,6 +86,16 @@ public class GamePanel extends JPanel {
                 bullets.get(i).y,
                 bullets.get(i).width,
                 bullets.get(i).height);
+        }
+        //boss bullets
+        g.setColor(Color.ORANGE);
+        for(int i=0;i<bossBullets.size();i++){
+            g.fillRect(
+                bossBullets.get(i).x,
+                bossBullets.get(i).y,
+                bossBullets.get(i).width,
+                bossBullets.get(i).height
+            );
         }
         //Enemy
         g.setColor(Color.RED);
@@ -291,7 +305,7 @@ public class GamePanel extends JPanel {
             }
         });
     }
-    //method ยิง
+    //method ยิง for player
     private void shoot() {
         long currentTime = System.currentTimeMillis();//เวลาปัจจุบันของเครื่อง
         if (currentTime - lastShotTime < fireDelay) { //ตรวจเวลาระหว่างการยิง
@@ -302,6 +316,19 @@ public class GamePanel extends JPanel {
         int bulletX = playerX + playerWidth / 2 - bullet.width / 2; //กระสุนออกกลางยาน
         int bulletY = playerY;
         bullets.add(new Bullet(bulletX, bulletY));
+    }
+    //method ยิง for boss
+    private void bossShoot(){
+        if(boss==null)return ;
+        long currentTime = System.currentTimeMillis();
+        if(currentTime-lastBossShotTime<bossFireDelay){
+            return ;
+        }
+        lastBossShotTime = currentTime;
+
+        int bulletX = boss.x+boss.width/2;
+        int bulletY = boss.y+boss.height;
+        bossBullets.add(new BossBullet(bulletX, bulletY));
     }
     //collision ว่าชนหรือไม่ชน
     //enemy
@@ -357,6 +384,22 @@ public class GamePanel extends JPanel {
         );
 
         return enemyRect.intersects(playerRect);
+    }
+    //boss bullet collision to player
+    private  boolean isColliding(BossBullet bullet){
+        Rectangle bulletRect = new Rectangle(
+            bullet.x,
+            bullet.y,
+            bullet.width,
+            bullet.height
+        );
+        Rectangle playerRect = new Rectangle(
+            playerX,
+            playerY,
+            playerWidth,
+            playerHeight
+        );
+        return  bulletRect.intersects(playerRect);
     }
     //spawnenemy
     private void spawnEnemy() {
@@ -431,6 +474,11 @@ public class GamePanel extends JPanel {
                     break;
                 }
             }
+            // //boss bullet
+            // for(int i=bossBullets.size()-1;i>=0;i--){
+            //     BossBullet bullet = bossBullets.get(i);
+                
+            // }
             //bullet hit boss
             if (!bulletHit && boss != null) {
                 if (isColliding(bullet, boss)) {
@@ -446,6 +494,22 @@ public class GamePanel extends JPanel {
                     }
                 }
             }
+        }
+        //boss bullet
+        for(int i=bossBullets.size()-1;i>=0;i--){
+            BossBullet bullet = bossBullets.get(i);
+            bullet.move();
+            //กระสุนชนplayer
+            if(isColliding(bullet)){
+                bossBullets.remove(i);
+                playerHP--;
+                if(playerHP<=0){
+                    gameOver = true;
+                    playerHP = 0;
+                }
+                continue;
+            }
+            if(bullet.y>panelH)bossBullets.remove(i);
         }
         //enemy
         for (int i = enemies.size() - 1; i >= 0; i--) {
@@ -467,6 +531,7 @@ public class GamePanel extends JPanel {
         //boss
         if (boss != null) {
             boss.move();
+            bossShoot();
         }
         if (bossWarning) {
             long currentTime = System.currentTimeMillis();
@@ -493,6 +558,7 @@ public class GamePanel extends JPanel {
 
         // Bullet
         bullets.clear();
+        bossBullets.clear();
 
         // Enemy
         enemies.clear();
