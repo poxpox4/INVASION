@@ -1,41 +1,51 @@
-public class Boss {
-    int x;
-    int y;
+import java.util.ArrayList;
+public abstract class Boss{
+    protected int fireDelay;
+    protected long lastShotTime = 0;
+    protected int x;
+    protected int y;
 
-    int width = 150;
-    int height = 100;
+    protected int width = 150;
+    protected int height = 100;
 
-    int speed = 3;
-    int direction = 1;
+    protected int speed = 3;
+    protected int direction = 1;
 
-    int hp = 50;
+    protected int hp = 50;
+    protected int maxHP;
 
-    public Boss(int x, int y) {
-        this.x = x;
-        this.y = y;
+    public Boss(int hp,int fireDelay,int speed) {
+        this.hp = hp;
+        this.maxHP = hp;
+        this.fireDelay = fireDelay;
+        this.speed = speed;
     }
+    public abstract void move();
+    public abstract void shoot(ArrayList<BossBullet> bossBullets);
+    public abstract void updateBossPhase();
+    public int getFireDelay() {
+        return fireDelay;
+    }
+    public boolean canShoot() {
 
-    public void move() {
+        long currentTime = System.currentTimeMillis();
 
-        if (y < 50) {
-            y += speed;
+        if (currentTime - lastShotTime < fireDelay) {
+            return false;
         }
-        x += direction*speed;//ขยับซ้าย/ขวา
-        if(x<=0){//ขอบซ้าย
-            x = 0;
-            direction = 1;
-        }
-        if(x+width>=800){//ขอบขวา
-            x = 800-width;
-            direction = -1;
-        }
-    }
 
-    public void takeDamage(int damage) {
-        hp -= damage;
-    }
+        lastShotTime = currentTime;
 
-    public boolean isDead() {
-        return hp <= 0;
+        return true;
     }
+    public boolean isDead(){
+        return this.hp<=0;
+    }
+    public void takeDamage(int damage){
+        this.hp -= damage;
+        if(this.hp<=0){
+            hp=0;
+        }
+    }
+         
 }

@@ -39,18 +39,22 @@ public class GamePanel extends JPanel {
     long lastEnemySpawnTime = 0;
     int enemySpawnDelay = 1000;
     int enemyKilled = 0;
-    int enemyTarget = 2;
-    boolean bossSpawned = false; //boss
+    int enemyTarget = 20;
+    //boss
+    Image bossImage;
+    boolean bossSpawned = false; 
     boolean bossWarning = false;
     boolean bossWarningDead = false;
     long bossDeadTime = 0;
     int bossDeadWarningDuration = 3000;
     long bossWarningTime = 0;
     int bossWarningDuration = 3000;
-    //boss
     Boss boss = null;
-    long lastBossShotTime = 0;
-    int bossFireDelay = 1000;
+    //check stage
+    int currentStage = 1;
+    boolean stageClear = false;
+    JButton restartStageButton;
+    JButton stage2Button;
 
     public GamePanel(Ship playerShip) {
         this.playerShip = playerShip;
@@ -61,18 +65,36 @@ public class GamePanel extends JPanel {
         else if(playerShip instanceof GrayShip){
             playerImage = new ImageIcon("images/grayship.png").getImage();
         }
-
+        setLayout(null);
         setPreferredSize(new Dimension(panelW, panelH)); //กำหนดขนาดพื้นที่เกม
         setBackground(Color.BLACK);
+        restartStageButton = new JButton("RESTART");
+        stage2Button = new JButton("STAGE 2");
 
-        setupKeyBindings();
+        restartStageButton.setBounds(300, 300, 200, 60);
+        stage2Button.setBounds(300, 400, 200, 60);
+
+        restartStageButton.setVisible(false);
+        stage2Button.setVisible(false);
+
+        add(restartStageButton);
+        add(stage2Button);
+
+        // setupKeyBindings();
 
         //เกมจะ Update ประมาณ 60 FPS
         timer = new Timer(16, e -> {
             updateGame();
             repaint();
         });
-
+        
+        restartStageButton.addActionListener(e -> {
+            restartGame();
+        });
+        stage2Button.addActionListener(e -> {
+            startStage2();
+        });
+        setupKeyBindings();
         timer.start();
     }
 
@@ -121,7 +143,7 @@ public class GamePanel extends JPanel {
             g.setColor(Color.DARK_GRAY);
             g.fillRect(barX, barY, barWidth, barHeight);
             //hpที่เหลือ
-            int hpWidth = (int)((double)boss.hp/50*barWidth);
+            int hpWidth = (int)((double)boss.hp/boss.maxHP*barWidth);
             g.setColor(Color.RED);
             g.fillRect(barX, barY, hpWidth, barHeight);
             //ขอบ
@@ -130,17 +152,18 @@ public class GamePanel extends JPanel {
 
             g.setFont(new Font("Arial", Font.BOLD, 18));
             g.drawString(
-                "BOSS HP: " + boss.hp + "/50",
+                "BOSS HP: " + boss.hp +"/"+ boss.maxHP,
                 barX+100,
                 barY -2
             );
-            g.setColor(Color.MAGENTA);
-            g.fillRect(
-                boss.x,
-                boss.y+50,
-                boss.width,
-                boss.height
-            );
+            // g.setColor(Color.MAGENTA);
+            // g.fillRect(
+            //     boss.x,
+            //     boss.y+50,
+            //     boss.width,
+            //     boss.height
+            // );
+            g.drawImage(bossImage, boss.x, boss.y+50, boss.width,boss.height,this);
         }
         //text
         g.setColor(Color.WHITE);
@@ -151,7 +174,7 @@ public class GamePanel extends JPanel {
             30
         );
         g.drawString(
-            "BOSS AT: 20 KILLS",
+            "BOSS AT: "+enemyTarget + " KILLS",
             20,
             55
         );
@@ -169,6 +192,11 @@ public class GamePanel extends JPanel {
                 130,
                 300
             );
+        }
+        if(stageClear){
+            g.setColor(Color.GREEN);
+            g.setFont(new Font("Arial", Font.BOLD, 40));
+            g.drawString("STAGE 1 CLEAR!", 250, 250);
         }
         if(gameWin){
             g.setColor(Color.GREEN);
@@ -309,6 +337,7 @@ public class GamePanel extends JPanel {
                 }
             }
         });
+        
     }
     //method ยิง for player
     private void shoot() {
@@ -322,18 +351,15 @@ public class GamePanel extends JPanel {
     //method ยิง for boss
     private void bossShoot(){
         if(boss==null)return ;
-        long currentTime = System.currentTimeMillis();
-        if(currentTime-lastBossShotTime<bossFireDelay){
-            return ;
+        if(boss.canShoot()){
+            if(boss instanceof BossStage1){
+                ((BossStage1)boss).shoot(bossBullets);
+            }
+            else if(boss instanceof BossStage2){
+                ((BossStage2)boss).shoot(bossBullets);
+            }
         }
-        lastBossShotTime = currentTime;
-        int bulletX1 = boss.x+boss.width/2-20;
-        int bulletX2 = boss.x+boss.width/2;
-        int bulletX3 = boss.x+boss.width/2+20;
-        int bulletY = boss.y+boss.height+50;
-        bossBullets.add(new BossBullet(bulletX1, bulletY,-1));//l
-        bossBullets.add(new BossBullet(bulletX2, bulletY,0));//c
-        bossBullets.add(new BossBullet(bulletX3, bulletY,1));//r
+        
     }
     //collision ว่าชนหรือไม่ชน
     //bullet collision enemy
@@ -437,25 +463,25 @@ public class GamePanel extends JPanel {
     }
     //spawnboss
     private void spawnBoss() {
-        boss = new Boss(0, 0);
+        if(currentStage==1){
+            boss = new BossStage1(70,1000,3);
+            if(boss instanceof BossStage1){
+                bossImage = new ImageIcon("images/bossStage1.png").getImage();
+            }
+            
+        }
+        else if(currentStage==2){
+            boss = new BossStage2(80,1000,5);
+            if(boss instanceof BossStage2){
+                bossImage = new ImageIcon("images/bossStage2.png").getImage();
+            }
+        }
         boss.x = panelW / 2 - boss.width / 2;
         boss.y = -boss.height ;
     }
-    private void updateBossPhase(){
-        if(boss==null)return ;
-        if(boss.hp>15&&boss.hp<=30){
-            bossFireDelay = 700;
-        }
-        else if(boss.hp>0&&boss.hp<=15){
-            bossFireDelay = 500;
-        }
-        else{
-            bossFireDelay = 1000;
-        }
-    }
     //method update
     private void updateGame() {
-        if(gameOver||gameWin){
+        if(gameOver||gameWin||stageClear){
             return ;
         }
         spawnEnemy();
@@ -522,10 +548,19 @@ public class GamePanel extends JPanel {
                     boss.takeDamage(1);
                     // Boss ตาย
                     if (boss.isDead()) {
-                        boss = null;
-                        bossWarningDead = true;
-                        gameWin = true;
-                        bossDeadTime = System.currentTimeMillis();
+                        // boss = null;
+                        // bossWarningDead = true;
+                        // gameWin = true;
+                        // bossDeadTime = System.currentTimeMillis();
+                        if(currentStage==1){
+                            stageClear = true;
+                            boss = null;
+                            restartStageButton.setVisible(true);
+                            stage2Button.setVisible(true);
+                        }
+                        else if(currentStage==2){
+                            gameWin = true;
+                        }
                     }
                 }
             }
@@ -566,7 +601,7 @@ public class GamePanel extends JPanel {
         //boss
         if (boss != null) {
             boss.move();
-            updateBossPhase();
+            boss.updateBossPhase();
             bossShoot();
         }
         if (bossWarning) {
@@ -582,6 +617,27 @@ public class GamePanel extends JPanel {
             }
         }
         
+    }
+    private void startStage2() {
+
+        currentStage = 2;
+        stageClear = false;
+
+        enemyKilled = 0;
+        bossSpawned = false;
+        boss = null;
+
+        enemies.clear();
+        bullets.clear();
+        bossBullets.clear();
+
+        lastEnemySpawnTime = 0;
+
+        bossWarning = false;
+        bossWarningDead = false;
+
+        restartStageButton.setVisible(false);
+        stage2Button.setVisible(false);
     }
     private void restartGame() {
         Ship newShip = ShipSelection.selectShip();
@@ -601,6 +657,8 @@ public class GamePanel extends JPanel {
         // Game
         gameOver = false;
         gameWin = false;
+        currentStage = 1;
+        stageClear = false;
 
         // Bullet
         bullets.clear();
@@ -614,8 +672,8 @@ public class GamePanel extends JPanel {
         // Boss
         boss = null;
         bossSpawned = false;
-        bossFireDelay = 1000;
-        lastBossShotTime = 0;
+        restartStageButton.setVisible(false);
+        stage2Button.setVisible(false);
 
         // Warning
         bossWarning = false;
