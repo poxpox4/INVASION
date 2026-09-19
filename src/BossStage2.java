@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 public class BossStage2 extends Boss{
     public BossStage2(int hp,int fireDelay,int speed){
-        super(60,fireDelay,3);
+        super(hp,fireDelay,3);
     }
     @Override 
     public void move(){

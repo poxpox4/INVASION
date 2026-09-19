@@ -39,17 +39,17 @@ public class GamePanel extends JPanel {
     long lastEnemySpawnTime = 0;
     int enemySpawnDelay = 1000;
     int enemyKilled = 0;
-    int enemyTarget = 20;
+    int enemyTarget = 7;
+    Image Deputyboss1,Deputyboss2,enemyImage;
     //boss
     Image bossImage;
     boolean bossSpawned = false; 
     boolean bossWarning = false;
-    boolean bossWarningDead = false;
-    long bossDeadTime = 0;
-    int bossDeadWarningDuration = 3000;
     long bossWarningTime = 0;
     int bossWarningDuration = 3000;
     Boss boss = null;
+    DeputyBoss deputyBoss = null;
+    boolean deputybossSpawned = false;
     //check stage
     int currentStage = 1;
     boolean stageClear = false;
@@ -128,12 +128,49 @@ public class GamePanel extends JPanel {
         g.setColor(Color.RED);
         for (int i = 0; i < enemies.size(); i++) {
             Enemy enemy = enemies.get(i);
-            g.fillRect(
-                enemy.x,
-                enemy.y,
-                enemy.width,
-                enemy.height
+            g.drawImage(enemyImage, enemy.x, enemy.y, enemy.width,enemy.height,this);
+        }
+        // Deputy Boss
+        if (deputyBoss != null) {
+
+            g.drawImage(
+                Deputyboss1,
+                deputyBoss.x,
+                deputyBoss.y,
+                deputyBoss.width,
+                deputyBoss.height,
+                this
             );
+            
+            int barWidth = 300;
+            int barHeight = 15;
+
+            int barX = (panelW - barWidth) / 2;
+            int barY = 55;
+            if(boss==null){
+                // HP Bar
+                g.setColor(Color.DARK_GRAY);
+                g.fillRect(barX, barY, barWidth, barHeight);
+
+                int hpWidth =
+                    (int)((double)deputyBoss.hp /
+                    deputyBoss.maxHP * barWidth);
+
+                g.setColor(Color.ORANGE);
+                g.fillRect(barX, barY, hpWidth, barHeight);
+                g.setColor(Color.WHITE);
+                g.drawRect(barX, barY, barWidth, barHeight);
+
+                g.setFont(new Font("Arial", Font.BOLD, 18));
+
+                g.drawString(
+                    "DEPUTY BOSS HP: "
+                    + deputyBoss.hp + "/" + deputyBoss.maxHP,
+                    barX+35 ,
+                    barY - 2
+                );
+
+            }
         }
         // Boss
         if (boss != null) {
@@ -156,13 +193,6 @@ public class GamePanel extends JPanel {
                 barX+100,
                 barY -2
             );
-            // g.setColor(Color.MAGENTA);
-            // g.fillRect(
-            //     boss.x,
-            //     boss.y+50,
-            //     boss.width,
-            //     boss.height
-            // );
             g.drawImage(bossImage, boss.x, boss.y+50, boss.width,boss.height,this);
         }
         //text
@@ -206,11 +236,6 @@ public class GamePanel extends JPanel {
             g.setColor(Color.WHITE);
             g.setFont(new Font("Arial", Font.BOLD, 20));
             g.drawString("PRESS R TO RESTART", 310, 380);
-        }
-        if(bossWarningDead){
-            g.setColor(Color.WHITE);
-            g.setFont(new Font("Arial",Font.BOLD,40));
-            g.drawString("YOU DEFEATED THE BOSS!", 160, 350);
         }
         
         if(gameOver){
@@ -450,6 +475,42 @@ public class GamePanel extends JPanel {
         );
         return  bulletRect.intersects(playerRect);
     }
+    //player bullet hir deputy boss
+    private boolean isColliding(Bullet bullet, DeputyBoss deputyBoss) {
+        Rectangle bulletRect = new Rectangle(
+            bullet.x,
+            bullet.y,
+            bullet.width,
+            bullet.height
+        );
+
+        Rectangle deputyRect = new Rectangle(
+            deputyBoss.x,
+            deputyBoss.y,
+            deputyBoss.width,
+            deputyBoss.height
+        );
+
+        return bulletRect.intersects(deputyRect);
+    }
+    //deputy boss hit player
+    private boolean isColliding(DeputyBoss deputyBoss) {
+        Rectangle playerRect = new Rectangle(
+            playerX,
+            playerY,
+            playerWidth,
+            playerHeight
+        );
+
+        Rectangle deputyRect = new Rectangle(
+            deputyBoss.x,
+            deputyBoss.y,
+            deputyBoss.width,
+            deputyBoss.height
+        );
+
+        return playerRect.intersects(deputyRect);
+    }
     //spawnenemy
     private void spawnEnemy() {
         long currentTime = System.currentTimeMillis();
@@ -457,9 +518,35 @@ public class GamePanel extends JPanel {
             return;
         }
         lastEnemySpawnTime = currentTime;
-        Enemy enemy = new Enemy(0,0);
+        if (currentStage == 1) {
+            spawnNormalEnemy();
+        }
+        else if (currentStage == 2) {
+            spawnXEnemies();
+        }
+    }
+    private void spawnDeputyBoss() {
+        deputyBoss = new DeputyBoss(30, 1500, 2);
+        deputyBoss.x = panelW / 2 - deputyBoss.width / 2;
+        deputyBoss.y = -deputyBoss.height;
+        if (currentStage == 1) {
+            Deputyboss1 =
+                new ImageIcon("images/Deputyboss1.png").getImage();
+        }
+    }
+    private void spawnNormalEnemy() {
+        enemyImage = new ImageIcon("images/enemy1.png").getImage();
+        Deputyboss1 = new ImageIcon("images/Deputyboss1.png").getImage();
+        NormalEnemy enemy = new NormalEnemy(0, 0);
         int enemyX = (int)(Math.random() * (panelW - enemy.width));
-        enemies.add(new Enemy(enemyX, -enemy.height));
+        enemies.add(new NormalEnemy(enemyX, -enemy.height));
+    }
+    private void spawnXEnemies() {
+        enemyImage = new ImageIcon("images/enemy2.png").getImage();
+        Deputyboss1 = new ImageIcon("images/Deputyboss2.png").getImage();
+        int enemyY = -40;
+        enemies.add(new XEnemy(100, enemyY, 1));
+        enemies.add(new XEnemy(700, enemyY, -1));
     }
     //spawnboss
     private void spawnBoss() {
@@ -504,6 +591,13 @@ public class GamePanel extends JPanel {
         if(spacefirepressed){ //spacefire
             shoot();
         }
+        if (deputyBoss != null && isColliding(deputyBoss)) {
+            playerHP--;
+            if (playerHP <= 0) {
+                playerHP = 0;
+                gameOver = true;
+            }
+        }
         if (boss != null && isColliding(boss)) {
             playerHP--;
 
@@ -528,6 +622,10 @@ public class GamePanel extends JPanel {
                     if(enemy.isDead()){// ถ้า HP หมด
                         enemies.remove(j);
                         enemyKilled++;
+                        if(enemyKilled>=5&&!deputybossSpawned){
+                            spawnDeputyBoss();
+                            deputybossSpawned = true;
+                        }
                         if (enemyKilled >= enemyTarget && !bossSpawned) {
                             bossSpawned = true;
                             bossWarning = true;
@@ -539,6 +637,22 @@ public class GamePanel extends JPanel {
                     break;
                 }
             }
+            // bullet hit Deputy Boss
+            if (!bulletHit && deputyBoss != null) {
+
+                if (isColliding(bullet, deputyBoss)) {
+                    bullets.remove(i);
+                    deputyBoss.takeDamage(1);
+                    if (deputyBoss.isDead()) {
+                        deputyBoss = null;
+                        deputybossSpawned = false;
+                        // Deputy Boss ตาย
+                        // ต่อไปเจอ Boss Stage 1
+                        // spawnBoss();
+                    }
+                    bulletHit = true;
+                }
+            }
             //bullet hit boss
             if (!bulletHit && boss != null) {
                 if (isColliding(bullet, boss)) {
@@ -548,10 +662,6 @@ public class GamePanel extends JPanel {
                     boss.takeDamage(1);
                     // Boss ตาย
                     if (boss.isDead()) {
-                        // boss = null;
-                        // bossWarningDead = true;
-                        // gameWin = true;
-                        // bossDeadTime = System.currentTimeMillis();
                         if(currentStage==1){
                             stageClear = true;
                             boss = null;
@@ -598,6 +708,17 @@ public class GamePanel extends JPanel {
                 enemies.remove(i);
             }
         }
+        // Deputy Boss
+        if (deputyBoss != null) {
+
+            deputyBoss.move();
+            deputyBoss.updateBossPhase();
+
+            if (deputyBoss.canShoot()) {
+
+                deputyBoss.shoot(bossBullets);
+            }
+        }
         //boss
         if (boss != null) {
             boss.move();
@@ -608,12 +729,6 @@ public class GamePanel extends JPanel {
             long currentTime = System.currentTimeMillis();
             if (currentTime - bossWarningTime >= bossWarningDuration) {
                 bossWarning = false;
-            }
-        }
-        if(bossWarningDead){
-            long currentTime = System.currentTimeMillis();
-            if(currentTime-bossDeadTime>=bossDeadWarningDuration){
-                bossWarningDead = false;
             }
         }
         
@@ -634,7 +749,7 @@ public class GamePanel extends JPanel {
         lastEnemySpawnTime = 0;
 
         bossWarning = false;
-        bossWarningDead = false;
+        // bossWarningDead = false;
 
         restartStageButton.setVisible(false);
         stage2Button.setVisible(false);
@@ -677,7 +792,7 @@ public class GamePanel extends JPanel {
 
         // Warning
         bossWarning = false;
-        bossWarningDead = false;
+        // bossWarningDead = false;
 
         // ป้องกันสถานะปุ่มค้าง
         upPressed = false;

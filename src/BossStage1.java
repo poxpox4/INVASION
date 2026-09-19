@@ -36,10 +36,10 @@ public class BossStage1 extends Boss {
     @Override
     public void updateBossPhase(){
         if(super.hp>25&&super.hp<=50){
-            super.fireDelay = 1500;
+            super.fireDelay = 1300;
         }
         else if(super.hp>0&&super.hp<=25){
-            super.fireDelay = 1000;
+            super.fireDelay = 900;
         }
         else{
             super.fireDelay = 2000;

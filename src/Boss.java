@@ -1,5 +1,5 @@
 import java.util.ArrayList;
-public abstract class Boss{
+public abstract class Boss implements Movable{
     protected int fireDelay;
     protected long lastShotTime = 0;
     protected int x;
