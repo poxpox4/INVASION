@@ -32,18 +32,16 @@ public class DeputyBoss extends Boss implements Movable{
 
     @Override
     public void shoot(ArrayList<BossBullet> bossBullets) {
+        int bulletX1 = super.x + super.width / 2-20;
+        int bulletX2 = super.x+super.width/2;
+        int bulletY = super.y + super.height;
 
-        int bulletX = x + width / 2;
-        int bulletY = y + height + 50;
-
-        bossBullets.add(
-            new BossBullet(bulletX, bulletY, 0)
-        );
+        bossBullets.add(new BossBullet(bulletX1, bulletY, -1));
+        bossBullets.add(new BossBullet(bulletX2, bulletY, 1));
     }
 
     @Override
     public void updateBossPhase() {
-
         if (hp <= maxHP / 2 && hp > 0) {
             fireDelay = 800;
         }
