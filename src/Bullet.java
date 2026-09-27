@@ -1,4 +1,4 @@
-public class Bullet {
+public class Bullet implements Movable{
     int x;
     int y;
 

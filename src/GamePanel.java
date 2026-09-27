@@ -3,8 +3,37 @@ import java.awt.event.ActionEvent; //รับevent ตอนactionทำงา�
 import java.awt.*; //นำ Class ต่าง ๆ เกี่ยวกับกราฟิกมาใช้
 import java.util.ArrayList;
 public class GamePanel extends JPanel {
+    //img bg
+    Image stage1Background;
+    Image stage2Background;
     //items
     ArrayList<Item> items = new ArrayList<>();
+    boolean powerMode = false;
+    long powerStartTime = 0;
+    int powerDuration = 10000;
+    Image powerItemImage;
+    Image helthItemImage;
+    Image helthmaxItemImage;
+    boolean speedMode = false;
+    long speedStartTime = 0;
+    int speedDuration = 10000;
+    int normalSpeed = 10;
+    Image speedItemImage;
+    int playerDamage = 1;
+    boolean damageBoost = false;
+    Image damageImage;
+    Image smallBombImage;
+    SmallBombItem currentBomb;
+    Image bigBombImage;
+    BigBombItem currentBigBomb;
+    boolean bigBombEffect = false;
+    long bigBombEffectStartTime = 0;
+    int bigBombEffectDuration = 500;
+    //bompEffect
+    boolean bombEffect = false;
+    long bombEffectStartTime = 0;
+    int bombEffectDuration = 300;
+    int bombEffectRange = 320;
     //select ship
     Ship playerShip;
     Image playerImage;
@@ -23,7 +52,8 @@ public class GamePanel extends JPanel {
     boolean gameWin = false;
 
     int panelW = 800,panelH = 750;
-
+    //bullets
+    Image bulletImage;
     ArrayList<Bullet> bullets = new ArrayList<>();//player bullet
     ArrayList<BossBullet> bossBullets = new ArrayList<>();//boss bullet
     long lastShotTime = 0; //เก็บเวลาที่เรายิงครั้งล่าสุด
@@ -67,6 +97,17 @@ public class GamePanel extends JPanel {
         else if(playerShip instanceof GrayShip){
             playerImage = new ImageIcon("images/grayship.png").getImage();
         }
+        bulletImage = new ImageIcon("images/bullet.png").getImage();
+        helthItemImage = new ImageIcon("images/helthItem.png").getImage();
+        powerItemImage = new ImageIcon("images/powerItem.png").getImage();
+        helthmaxItemImage = new ImageIcon("images/helthmaxhp.png").getImage();
+        speedItemImage = new ImageIcon("images/speedItem.png").getImage();
+        damageImage = new ImageIcon("images/damageitem.png").getImage();
+        smallBombImage = new ImageIcon("images/smallbombitem.png").getImage();
+        bigBombImage = new ImageIcon("images/bigbombItem.png").getImage();
+        stage1Background = new ImageIcon("images/stage1bg.png").getImage();
+        stage2Background = new ImageIcon("images/stage2bg.png").getImage();
+        
         setLayout(null);
         setPreferredSize(new Dimension(panelW, panelH)); //กำหนดขนาดพื้นที่เกม
         setBackground(Color.BLACK);
@@ -104,17 +145,20 @@ public class GamePanel extends JPanel {
     protected void paintComponent(Graphics g) { //paintComponent วาดสิ่งต่าง ๆ ลงบนหน้าจอ
         //Graphics g ปากกาวาด
         super.paintComponent(g); //สั่งให้ JPanel วาดพื้นหลังก่อน
-
+        // Background
+        if (currentStage == 1) {
+            g.drawImage(stage1Background,0,0,panelW, panelH,this);
+        }
+        else if (currentStage == 2) {
+            g.drawImage(stage2Background,0,0,panelW,panelH,this);
+        }
         //player ship
         g.drawImage(playerImage, playerX, playerY, playerWidth,playerHeight,this);
         //player bullets
         g.setColor(Color.YELLOW);
         for(int i=0;i<bullets.size();i++){
-            g.fillRect(
-                bullets.get(i).x,
-                bullets.get(i).y,
-                bullets.get(i).width,
-                bullets.get(i).height);
+            Bullet bullet = bullets.get(i);
+            g.drawImage(bulletImage, bullet.x, bullet.y, bullet.width,bullet.height,this);
         }
         //boss bullets
         g.setColor(Color.ORANGE);
@@ -136,21 +180,30 @@ public class GamePanel extends JPanel {
         for (int i = 0; i < items.size(); i++) {
             Item item = items.get(i);
             if (item instanceof HealthItem) {
-                g.setColor(Color.GREEN);
+                g.drawImage(helthItemImage, item.x, item.y, item.width,item.height,this);
+            }
+            else if(item instanceof HealthMaxHPItem){
+                g.drawImage(helthmaxItemImage, item.x, item.y, item.width,item.height,this);
             }
             else if (item instanceof PowerItem) {
-                g.setColor(Color.YELLOW);
+                g.drawImage(powerItemImage, item.x, item.y, item.width,item.height,this);
+                // powerMode = true;
             }
-            g.fillRect(
-                item.x,
-                item.y,
-                item.width,
-                item.height
-            );
+            else if(item instanceof SpeedItem){
+                g.drawImage(speedItemImage, item.x, item.y,item.width,item.height,this);
+            }
+            else if(item instanceof DamageItem){
+                g.drawImage(damageImage, item.x, item.y, item.width,item.height,this);
+            }
+            else if(item instanceof SmallBombItem){
+                g.drawImage(smallBombImage, item.x, item.y, item.width,item.height,this);
+            }
+            else if(item instanceof BigBombItem){
+                g.drawImage(bigBombImage, item.x, item.y, item.width,item.height,this);
+            }
         }
         // Deputy Boss
         if (deputyBoss != null) {
-
             g.drawImage(
                 Deputyboss1,
                 deputyBoss.x,
@@ -236,6 +289,30 @@ public class GamePanel extends JPanel {
             g.setFont(new Font("Arial", Font.BOLD, 20));
             g.drawString("PRESS R TO RESTART", 298, 350);
         }
+        if (bombEffect && currentBomb != null) {
+            currentBomb.drawEffect(
+                g,
+                playerX,
+                playerY,
+                playerWidth,
+                playerHeight,
+                bombEffectStartTime,
+                bombEffectDuration
+            );
+        }
+        if (bigBombEffect && currentBigBomb != null) {
+            currentBigBomb.drawEffect(
+                g,
+                playerX,
+                playerY,
+                playerWidth,
+                playerHeight,
+                bigBombEffectStartTime,
+                bigBombEffectDuration,
+                panelW,
+                panelH
+            );
+        }
     }
     //actions w,a,s,d
     private void setupKeyBindings() {
@@ -305,9 +382,6 @@ public class GamePanel extends JPanel {
         getActionMap().put("moveRight", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // playerX += playerSpeed;
-                // if(playerX+playerWidth>panelW)playerX=panelW-playerWidth;
-                // repaint();
                 rightPressed = true;
             }
         });
@@ -360,7 +434,28 @@ public class GamePanel extends JPanel {
             return;
         }
         lastShotTime = currentTime;
-        playerShip.shoot(playerX,playerY,playerWidth,bullets);
+        if(powerMode){
+            Bullet bullet1 = new Bullet(
+                playerX + playerWidth / 2 - 20,
+                playerY
+            );
+            Bullet bullet2 = new Bullet(
+                playerX + playerWidth / 2 - 3,
+                playerY
+            );
+            Bullet bullet3 = new Bullet(
+                playerX + playerWidth / 2 + 14,
+                playerY
+            );
+
+            bullets.add(bullet1);
+            bullets.add(bullet2);
+            bullets.add(bullet3);
+        }
+        else{
+            playerShip.shoot(playerX,playerY,playerWidth,bullets);
+        }
+        
     }
     //method ยิง for boss
     private void bossShoot(){
@@ -529,6 +624,26 @@ public class GamePanel extends JPanel {
         else if (random < 30&&random>=20) {
             items.add(new PowerItem(x, y));
         }
+        //5%
+        else if(random>=30&&random<35){
+            items.add(new HealthMaxHPItem(x, y));
+        }
+        //10%
+        else if(random>=35&&random<45){
+            items.add(new SpeedItem(x, y));
+        }
+        //10%
+        else if(random>=45&&random<55){
+            items.add(new DamageItem(x, y));
+        }
+        //10%
+        else if(random>=55&&random<65){
+            items.add(new SmallBombItem(x, y));
+        }
+        //5%
+        else if(random>=65&&random<70){
+            items.add(new BigBombItem(x, y));
+        }
     }
     //spawnenemy
     private void spawnEnemy() {
@@ -640,7 +755,15 @@ public class GamePanel extends JPanel {
                 Enemy enemy = enemies.get(j);
                 if (isColliding(bullet, enemy)) {
                     bullets.remove(i);
-                    enemy.takeDamage(1);// Enemy เสีย HP 1
+                    if(damageBoost){
+                        enemy.takeDamage(playerDamage);
+                        damageBoost = false;
+                        playerDamage = 1;
+                    }
+                    else{
+                        enemy.takeDamage(1);// Enemy เสีย HP 1
+                    }
+                    
                     if(enemy.isDead()){// ถ้า HP หมด
                         enemies.remove(j);
                         enemyKilled++;
@@ -665,7 +788,15 @@ public class GamePanel extends JPanel {
 
                 if (isColliding(bullet, deputyBoss)) {
                     bullets.remove(i);
-                    deputyBoss.takeDamage(1);
+                    if(damageBoost){
+                        deputyBoss.takeDamage(playerDamage);
+                        damageBoost = false;
+                        playerDamage = 1;
+                    }
+                    else{
+                        deputyBoss.takeDamage(1);
+                    }
+                    
                     if (deputyBoss.isDead()) {
                         spawnItem(deputyBoss.x, deputyBoss.y);
                         deputyBoss = null;
@@ -681,7 +812,15 @@ public class GamePanel extends JPanel {
                     // ลบกระสุน
                     bullets.remove(i);
                     // ลดเลือด Boss
-                    boss.takeDamage(1);
+                    if(damageBoost){
+                        boss.takeDamage(playerDamage);
+                        damageBoost = false;
+                        playerDamage = 1;
+                    }
+                    else{
+                        boss.takeDamage(1);
+                    }
+                    
                     // Boss ตาย
                     if (boss.isDead()) {
                         if(currentStage==1){
@@ -744,6 +883,102 @@ public class GamePanel extends JPanel {
                         playerHP = playerMaxHP;
                     }
                 }
+                else if(item instanceof HealthMaxHPItem){
+                    playerHP = playerMaxHP;
+                }
+                else if(item instanceof PowerItem){
+                    powerMode = true;
+                    powerStartTime = System.currentTimeMillis();
+                }
+                else if(item instanceof SpeedItem){
+                    speedMode = true;
+                    speedStartTime = System.currentTimeMillis();
+                    playerSpeed = normalSpeed+item.applyEffect();
+                }
+                else if(item instanceof DamageItem){
+                    damageBoost = true;
+                    playerDamage += item.applyEffect();
+                }
+                else if(item instanceof SmallBombItem){
+                    SmallBombItem bomb = (SmallBombItem)item;
+                    bomb.explode(enemies, deputyBoss, boss,playerX,playerY,playerWidth,playerHeight);
+                    bombEffect = true;
+                    bombEffectStartTime = System.currentTimeMillis();
+                    bombEffectRange = bomb.getRange();
+                    currentBomb = bomb;
+                    // จัดการ Enemy ที่ตาย
+                    for (int j = enemies.size() - 1; j >= 0; j--) {
+                        Enemy enemy = enemies.get(j);
+                        if (enemy.isDead()) {
+                            enemies.remove(j);
+                            enemyKilled++;
+                            spawnItem(enemy.x, enemy.y);
+                        }
+                    }
+                    // จัดการ Deputy Boss ที่ตาย
+                    if (deputyBoss != null && deputyBoss.isDead()) {
+                        spawnItem(deputyBoss.x, deputyBoss.y);
+                        deputyBoss = null;
+                        deputybossSpawned = false;
+                    }
+                    // จัดการ Boss ที่ตาย
+                    if (boss != null && boss.isDead()) {
+                        if (currentStage == 1) {
+                            stageClear = true;
+                            boss = null;
+                            restartStageButton.setVisible(true);
+                            stage2Button.setVisible(true);
+                        }
+                        else if (currentStage == 2) {
+                            gameWin = true;
+                        }
+                    }
+                }
+                else if(item instanceof BigBombItem){
+                    BigBombItem bomb = (BigBombItem)item;
+                    bomb.explode(
+                        enemies,
+                        deputyBoss,
+                        boss
+                    );
+                    bigBombEffect = true;
+                    bigBombEffectStartTime = System.currentTimeMillis();
+                    currentBigBomb = bomb;
+                    // จัดการ Enemy ที่ตาย
+                    for (int j = enemies.size() - 1; j >= 0; j--) {
+                        Enemy enemy = enemies.get(j);
+                        if (enemy.isDead()) {
+                            enemies.remove(j);
+                            enemyKilled++;
+                            spawnItem(
+                                enemy.x,
+                                enemy.y
+                            );
+                        }
+                    }
+                    // จัดการ Deputy Boss ที่ตาย
+                    if (deputyBoss != null && deputyBoss.isDead()) {
+                        spawnItem(
+                            deputyBoss.x,
+                            deputyBoss.y
+                        );
+                        deputyBoss = null;
+                        deputybossSpawned = false;
+                    }
+                    // จัดการ Main Boss ที่ตาย
+                    if (boss != null && boss.isDead()) {
+                        if (currentStage == 1) {
+                            stageClear = true;
+                            boss = null;
+                            restartStageButton.setVisible(true);
+                            stage2Button.setVisible(true);
+                        }
+                        else if (currentStage == 2) {
+                            gameWin = true;
+                            boss = null;
+                        }
+                    }
+                }
                 // ลบ Item หลังจากเก็บได้
                 items.remove(i);
                 continue;
@@ -773,9 +1008,35 @@ public class GamePanel extends JPanel {
                 bossWarning = false;
             }
         }
-        
+        if(powerMode){
+            long currentTime = System.currentTimeMillis();
+            if(currentTime-powerStartTime >= powerDuration){
+                powerMode = false;
+            }
+        }
+        if(speedMode){
+            long currentTime = System.currentTimeMillis();
+            if(currentTime-speedStartTime>=speedDuration){
+                speedMode = false;
+                playerSpeed = normalSpeed;
+            }
+        }
+        if(bombEffect){
+            long currentTime = System.currentTimeMillis();
+            if(currentTime-bombEffectStartTime>=bombEffectDuration){
+                bombEffect = false;
+                currentBomb = null;
+            }
+        }
+        if(bigBombEffect){
+            long currentTime = System.currentTimeMillis();
+            if(currentTime-bigBombEffectStartTime>=bigBombEffectDuration){
+                bigBombEffect = false;
+                currentBigBomb = null;
+            }
+        }
     }
-    private void startStage2() {
+    public void startStage2() {
         items.clear();
         currentStage = 2;
         stageClear = false;
@@ -783,6 +1044,9 @@ public class GamePanel extends JPanel {
         enemyKilled = 0;
         bossSpawned = false;
         boss = null;
+
+        deputyBoss = null;
+        deputybossSpawned = false;
 
         enemies.clear();
         bullets.clear();
@@ -793,6 +1057,23 @@ public class GamePanel extends JPanel {
         bossWarning = false;
         // bossWarningDead = false;
 
+        restartStageButton.setVisible(false);
+        stage2Button.setVisible(false);
+    }
+    public void startSelectedStage2() {
+        items.clear();
+        currentStage = 2;
+        stageClear = false;
+        enemyKilled = 0;
+        bossSpawned = false;
+        boss = null;
+        deputyBoss = null;
+        deputybossSpawned = false;
+        enemies.clear();
+        bullets.clear();
+        bossBullets.clear();
+        lastEnemySpawnTime = 0;
+        bossWarning = false;
         restartStageButton.setVisible(false);
         stage2Button.setVisible(false);
     }
@@ -808,10 +1089,15 @@ public class GamePanel extends JPanel {
         }
         //items
         items.clear();
+        powerMode = false;
+        damageBoost = false;
+        playerDamage = 1;
         // Player
         playerX = 375;
         playerY = 600;
         playerHP = playerMaxHP;
+        speedMode = false;
+        playerSpeed = normalSpeed;
 
         // Game
         gameOver = false;
@@ -828,11 +1114,23 @@ public class GamePanel extends JPanel {
         enemyKilled = 0;
         lastEnemySpawnTime = 0;
 
+        //deputyboss
+        deputyBoss = null;
+        deputybossSpawned = false;
+        
         // Boss
         boss = null;
         bossSpawned = false;
         restartStageButton.setVisible(false);
         stage2Button.setVisible(false);
+
+        //bombEffect
+        bombEffect = false;
+        currentBomb = null;
+        bombEffectStartTime = 0;
+        bigBombEffect = false;
+        currentBigBomb = null;
+        bigBombEffectStartTime = 0;
 
         // Warning
         bossWarning = false;

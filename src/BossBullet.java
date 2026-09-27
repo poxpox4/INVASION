@@ -1,4 +1,4 @@
-public class BossBullet {
+public class BossBullet implements Movable{
     int x;
     int y;
 
@@ -13,7 +13,7 @@ public class BossBullet {
         this.y = y;
         this.direction = direction;
     }
-
+    
     public void move() {
         x += direction*2;
         y += speed;
