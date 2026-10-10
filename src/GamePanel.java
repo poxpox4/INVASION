@@ -73,6 +73,8 @@ public class GamePanel extends JPanel {
     int enemyKilled = 0;
     int enemyTarget = 30;
     Image Deputyboss1,Deputyboss2,enemyImage;
+    int stage2SpawnCount = 0;
+    int stage2SXWaveEvery = 6;
     //boss
     Image bossImage;
     boolean bossSpawned = false; 
@@ -84,6 +86,7 @@ public class GamePanel extends JPanel {
     boolean deputybossSpawned = false;
     //check stage
     int currentStage = 1;
+    int restartGame = 1;
     boolean stageClear = false;
     JButton restartStageButton;
     JButton stage2Button;
@@ -122,8 +125,6 @@ public class GamePanel extends JPanel {
 
         add(restartStageButton);
         add(stage2Button);
-
-        // setupKeyBindings();
 
         //เกมจะ Update ประมาณ 60 FPS
         timer = new Timer(16, e -> {
@@ -655,8 +656,13 @@ public class GamePanel extends JPanel {
         if (currentStage == 1) {
             spawnNormalEnemy();
         }
-        else if (currentStage == 2) {
-            spawnXEnemies();
+        else if (currentStage == 2){
+            spawnNormalEnemy();
+            stage2SpawnCount++;
+            if(stage2SpawnCount>=stage2SXWaveEvery){
+                spawnXEnemies();
+                stage2SpawnCount = 0;
+            }
         }
     }
     private void spawnDeputyBoss() {
@@ -672,8 +678,15 @@ public class GamePanel extends JPanel {
         deputyBoss.y = -deputyBoss.height;
     }
     private void spawnNormalEnemy() {
-        enemyImage = new ImageIcon("images/enemy1.png").getImage();
-        Deputyboss1 = new ImageIcon("images/Deputyboss1.png").getImage();
+        if(currentStage==1){
+            enemyImage = new ImageIcon("images/enemy1.png").getImage();
+            Deputyboss1 = new ImageIcon("images/Deputyboss1.png").getImage();
+        }
+        else{
+            enemyImage = new ImageIcon("images/enemy2.png").getImage();
+            Deputyboss2 = new ImageIcon("images/Deputyboss2.png").getImage();
+
+        }
         NormalEnemy enemy = new NormalEnemy(0, 0);
         int enemyX = (int)(Math.random() * (panelW - enemy.width));
         enemies.add(new NormalEnemy(enemyX, -enemy.height));
@@ -681,9 +694,18 @@ public class GamePanel extends JPanel {
     private void spawnXEnemies() {
         enemyImage = new ImageIcon("images/enemy2.png").getImage();
         Deputyboss1 = new ImageIcon("images/Deputyboss2.png").getImage();
-        int enemyY = -40;
-        enemies.add(new XEnemy(100, enemyY, 1));
-        enemies.add(new XEnemy(700, enemyY, -1));
+        //คู่1 
+        enemies.add(new XEnemy(0, -40, 1));//ซ้าย
+        enemies.add(new XEnemy(panelW-40, -220, -1));//ขวา
+        //คู่2 
+        enemies.add(new XEnemy(200,-100,1));//ซ้าย
+        enemies.add(new XEnemy(panelW-200,-300,-1));//ขวา
+        //คู่3 ขวา
+        enemies.add(new XEnemy(panelW-150,-200,-1));//ขวา
+        enemies.add(new XEnemy(250,-200,1));//ซ้าย
+        //คู่4 ซ้าย
+        enemies.add(new XEnemy(50,-70,1));//ซ้าย
+        enemies.add(new XEnemy(panelW-100,-150,-1));//ขวา
     }
     //spawnboss
     private void spawnBoss() {
@@ -695,13 +717,21 @@ public class GamePanel extends JPanel {
             
         }
         else if(currentStage==2){
-            boss = new BossStage2(80,1000,5);
+            boss = new BossStage2(80,1000,3);
             if(boss instanceof BossStage2){
                 bossImage = new ImageIcon("images/bossStage2.png").getImage();
             }
         }
         boss.x = panelW / 2 - boss.width / 2;
         boss.y = -boss.height ;
+    }
+    private void checkBossSpawn() {
+        if (enemyKilled >= enemyTarget && !bossSpawned) {
+            bossSpawned = true;
+            bossWarning = true;
+            bossWarningTime = System.currentTimeMillis();
+            spawnBoss();
+        }
     }
     //method update
     private void updateGame() {
@@ -915,6 +945,7 @@ public class GamePanel extends JPanel {
                             spawnItem(enemy.x, enemy.y);
                         }
                     }
+                    checkBossSpawn();
                     // จัดการ Deputy Boss ที่ตาย
                     if (deputyBoss != null && deputyBoss.isDead()) {
                         spawnItem(deputyBoss.x, deputyBoss.y);
@@ -956,6 +987,7 @@ public class GamePanel extends JPanel {
                             );
                         }
                     }
+                    checkBossSpawn();
                     // จัดการ Deputy Boss ที่ตาย
                     if (deputyBoss != null && deputyBoss.isDead()) {
                         spawnItem(
@@ -1039,6 +1071,7 @@ public class GamePanel extends JPanel {
     public void startStage2() {
         items.clear();
         currentStage = 2;
+        restartGame = 2;
         stageClear = false;
 
         enemyKilled = 0;
@@ -1053,6 +1086,7 @@ public class GamePanel extends JPanel {
         bossBullets.clear();
 
         lastEnemySpawnTime = 0;
+        stage2SpawnCount = 0;
 
         bossWarning = false;
         // bossWarningDead = false;
@@ -1063,6 +1097,7 @@ public class GamePanel extends JPanel {
     public void startSelectedStage2() {
         items.clear();
         currentStage = 2;
+        restartGame = 2;
         stageClear = false;
         enemyKilled = 0;
         bossSpawned = false;
@@ -1102,7 +1137,7 @@ public class GamePanel extends JPanel {
         // Game
         gameOver = false;
         gameWin = false;
-        currentStage = 1;
+        currentStage = restartGame;
         stageClear = false;
 
         // Bullet
