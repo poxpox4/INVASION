@@ -1459,6 +1459,8 @@ public class GamePanel extends JPanel {
         restartGame = 2;
         stageClear = false;
 
+        playerHP = playerMaxHP;
+
         enemyKilled = 0;
         bossSpawned = false;
         boss = null;
@@ -1482,6 +1484,7 @@ public class GamePanel extends JPanel {
         stage2Button.setVisible(false);
     }
     public void startSelectedStage2() {
+        playerHP = playerMaxHP;
         items.clear();
         currentStage = 2;
         restartGame = 2;
