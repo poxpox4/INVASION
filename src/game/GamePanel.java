@@ -2,6 +2,7 @@ import javax.swing.*;//พื้นที่สำหรับวาดเกม
 import java.awt.event.ActionEvent; //รับevent ตอนactionทำงาน
 import java.awt.*; //นำ Class ต่าง ๆ เกี่ยวกับกราฟิกมาใช้
 import java.util.ArrayList;
+
 public class GamePanel extends JPanel {
     JButton homeButton;
     //img bg
@@ -1454,10 +1455,14 @@ public class GamePanel extends JPanel {
         }
     }
     public void startStage2() {
-        items.clear();
         currentStage = 2;
         restartGame = 2;
         stageClear = false;
+        //items
+        items.clear();
+        powerMode = false;
+        damageBoost = false;
+        playerDamage = 1;
 
         playerHP = playerMaxHP;
 
@@ -1485,7 +1490,11 @@ public class GamePanel extends JPanel {
     }
     public void startSelectedStage2() {
         playerHP = playerMaxHP;
+        //items
         items.clear();
+        powerMode = false;
+        damageBoost = false;
+        playerDamage = 1;
         currentStage = 2;
         restartGame = 2;
         stageClear = false;

@@ -1,6 +1,6 @@
 public abstract class Enemy implements Movable {
 
-    protected int x;
+    public int x;
     protected int y;
 
     protected int width = 40;
