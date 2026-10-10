@@ -3,9 +3,14 @@ import java.awt.event.ActionEvent; //รับevent ตอนactionทำงา�
 import java.awt.*; //นำ Class ต่าง ๆ เกี่ยวกับกราฟิกมาใช้
 import java.util.ArrayList;
 public class GamePanel extends JPanel {
+    JButton homeButton;
     //img bg
     Image stage1Background;
     Image stage2Background;
+    //pause
+    boolean paused = false;
+    JButton pauseButton;
+    JDialog pauseDialog;
     //items
     ArrayList<Item> items = new ArrayList<>();
     boolean powerMode = false;
@@ -77,6 +82,7 @@ public class GamePanel extends JPanel {
     int stage2SXWaveEvery = 6;
     //boss
     Image bossImage;
+    Image bossBulletImage;
     boolean bossSpawned = false; 
     boolean bossWarning = false;
     long bossWarningTime = 0;
@@ -100,6 +106,7 @@ public class GamePanel extends JPanel {
         else if(playerShip instanceof GrayShip){
             playerImage = new ImageIcon("images/grayship.png").getImage();
         }
+        bossBulletImage = new ImageIcon("images/bossbullet.png").getImage();
         bulletImage = new ImageIcon("images/bullet.png").getImage();
         helthItemImage = new ImageIcon("images/helthItem.png").getImage();
         powerItemImage = new ImageIcon("images/powerItem.png").getImage();
@@ -114,18 +121,88 @@ public class GamePanel extends JPanel {
         setLayout(null);
         setPreferredSize(new Dimension(panelW, panelH)); //กำหนดขนาดพื้นที่เกม
         setBackground(Color.BLACK);
-        restartStageButton = new JButton("RESTART");
-        stage2Button = new JButton("STAGE 2");
+        // restartStageButton = new JButton("RESTART");
+        // stage2Button = new JButton("STAGE 2");
 
-        restartStageButton.setBounds(300, 300, 200, 60);
-        stage2Button.setBounds(300, 400, 200, 60);
+        // restartStageButton.setBounds(300, 300, 200, 60);
+        // stage2Button.setBounds(300, 400, 200, 60);
+
+        // restartStageButton.setVisible(false);
+        // stage2Button.setVisible(false);
+
+        // add(restartStageButton);
+        // add(stage2Button);
+        int buttonW = 200;
+        int buttonH = 50;
+        int gap = 40;
+        int totalW = buttonW * 2 + gap;
+        int startX = (panelW - totalW) / 2;
+        int buttonY = 620;
+        Home home = new Home();
+        restartStageButton = home.createButton(
+            "RESTART",
+            new Color(255, 65, 65)
+        );
+        stage2Button = home.createButton(
+            "NEXT STAGE",
+            new Color(40, 220, 110)
+        );
+        homeButton = home.createButton(
+            "HOME",
+            new Color(40, 170, 230)
+        );
+        // ตำแหน่งปุ่มหน้า Stage Clear
+        restartStageButton.setBounds(300, 400, 200, 50);
+        stage2Button.setBounds(
+            startX,
+            buttonY,
+            buttonW,
+            buttonH
+        );
+
+        homeButton.setBounds(
+            startX + buttonW + gap,
+            buttonY,
+            buttonW,
+            buttonH
+        );
 
         restartStageButton.setVisible(false);
         stage2Button.setVisible(false);
+        homeButton.setVisible(false);
 
         add(restartStageButton);
         add(stage2Button);
+        add(homeButton);
+        homeButton.addActionListener(e -> {
+            timer.stop();
 
+            JFrame frame = (JFrame)
+                SwingUtilities.getWindowAncestor(this);
+
+            if (frame != null) {
+                frame.setContentPane(new Home());
+                frame.pack();
+                frame.setLocationRelativeTo(null);
+                frame.revalidate();
+                frame.repaint();
+            }
+        });
+        // ปุ่ม Pause
+        pauseButton = new JButton(new ImageIcon("images/pausemenu.png"));
+        pauseButton.setBounds(735, 15, 45, 45);
+        pauseButton.setFocusable(false);
+        pauseButton.setFocusPainted(false);
+        pauseButton.setBorderPainted(false);
+        pauseButton.setContentAreaFilled(false);    
+        pauseButton.setRequestFocusEnabled(false);
+        pauseButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        add(pauseButton);
+
+        pauseButton.addActionListener(e -> {
+            showPauseMenu();
+        });
         //เกมจะ Update ประมาณ 60 FPS
         timer = new Timer(16, e -> {
             updateGame();
@@ -141,7 +218,278 @@ public class GamePanel extends JPanel {
         setupKeyBindings();
         timer.start();
     }
+    
+    private void drawGameOver(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g.create();
 
+        // พื้นหลังมืด
+        g2.setColor(new Color(0, 0, 15, 225));
+        g2.fillRect(0, 0, panelW, panelH);
+
+        // GAME OVER
+        g2.setFont(new Font("Arial", Font.BOLD, 32));
+        g2.setColor(Color.WHITE);
+
+        String title = "STAGE " + currentStage;
+        FontMetrics fm = g2.getFontMetrics();
+        g2.drawString(title,
+            (panelW - fm.stringWidth(title)) / 2, 100);
+
+        g2.setFont(new Font("Arial", Font.BOLD, 58));
+        g2.setColor(new Color(255, 65, 65));
+
+        String overText = "GAME OVER";
+        fm = g2.getFontMetrics();
+        g2.drawString(overText,
+            (panelW - fm.stringWidth(overText)) / 2, 175);
+
+        // ข้อความแพ้
+        g2.setFont(new Font("Arial", Font.BOLD, 22));
+        g2.setColor(Color.WHITE);
+
+        String resultText = "YOUR SHIP WAS DESTROYED";
+        fm = g2.getFontMetrics();
+        g2.drawString(resultText,
+            (panelW - fm.stringWidth(resultText)) / 2, 260);
+
+        // คะแนน
+        int score = enemyKilled * 100;
+
+        g2.setFont(new Font("Arial", Font.BOLD, 20));
+        g2.setColor(new Color(150, 210, 255));
+
+        String scoreLabel = "SCORE";
+        fm = g2.getFontMetrics();
+        g2.drawString(scoreLabel,
+            (panelW - fm.stringWidth(scoreLabel)) / 2, 380);
+
+        String scoreText = String.format("%08d", score);
+        g2.setFont(new Font("Monospaced", Font.BOLD, 30));
+        g2.setColor(Color.WHITE);
+        fm = g2.getFontMetrics();
+        g2.drawString(scoreText,
+            (panelW - fm.stringWidth(scoreText)) / 2, 420);
+
+        g2.dispose();
+    }
+    private void drawStageResult(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g.create();
+
+        // พื้นหลัง
+        g2.setColor(new Color(0, 0, 15, 225));
+        g2.fillRect(0, 0, panelW, panelH);
+
+        boolean stage1 = currentStage == 1;
+
+        Color mainColor = stage1
+            ? new Color(255, 190, 55)
+            : new Color(220, 130, 255);
+
+
+        // ชื่อ Stage
+        g2.setFont(new Font("Arial", Font.BOLD, 32));
+        g2.setColor(Color.WHITE);
+
+        String stageText = stage1 ? "STAGE 1" : "STAGE 2";
+        FontMetrics fm = g2.getFontMetrics();
+
+        g2.drawString(
+            stageText,
+            (panelW - fm.stringWidth(stageText)) / 2,
+            100
+        );
+
+        // CLEAR!
+        g2.setFont(new Font("Arial", Font.BOLD, 58));
+        g2.setColor(mainColor);
+
+        String clearText = "CLEAR!";
+        fm = g2.getFontMetrics();
+
+        g2.drawString(
+            clearText,
+            (panelW - fm.stringWidth(clearText)) / 2,
+            165
+        );
+
+        // ดาว 3 ดวง
+        g2.setFont(new Font("Serif", Font.PLAIN, 55));
+        g2.setColor(mainColor);
+
+        String stars = "★ ★ ★";
+        fm = g2.getFontMetrics();
+
+        g2.drawString(
+            stars,
+            (panelW - fm.stringWidth(stars)) / 2,
+            230
+        );
+
+        // ข้อความตาม Stage
+        g2.setFont(new Font("Arial", Font.BOLD, 22));
+        g2.setColor(Color.WHITE);
+
+        String resultText = "BOSS DESTROYED!";
+
+        fm = g2.getFontMetrics();
+
+        g2.drawString(
+            resultText,
+            (panelW - fm.stringWidth(resultText)) / 2,
+            300
+        );
+
+        // คะแนน
+        int score = enemyKilled * 100;
+
+        g2.setFont(new Font("Arial", Font.BOLD, 20));
+        g2.setColor(new Color(150, 210, 255));
+
+        String scoreLabel = "SCORE";
+        fm = g2.getFontMetrics();
+
+        g2.drawString(
+            scoreLabel,
+            (panelW - fm.stringWidth(scoreLabel)) / 2,
+            400
+        );
+
+        String scoreText = String.format("%08d", score);
+
+        g2.setFont(new Font("Monospaced", Font.BOLD, 30));
+        g2.setColor(Color.WHITE);
+        fm = g2.getFontMetrics();
+
+        g2.drawString(
+            scoreText,
+            (panelW - fm.stringWidth(scoreText)) / 2,
+            440
+        );
+
+        g2.dispose();
+        
+    }
+    private void showPauseMenu() {
+        if (gameOver || gameWin || stageClear || paused) {
+            return;
+        }
+
+        paused = true;
+
+        JFrame frame = (JFrame)
+            SwingUtilities.getWindowAncestor(this);
+
+        if (frame == null) {
+            paused = false;
+            return;
+        }
+
+        pauseDialog = new JDialog(frame, "INVASION", true);
+        pauseDialog.setSize(420, 300);
+        pauseDialog.setResizable(false);
+        pauseDialog.setDefaultCloseOperation(
+            JDialog.DO_NOTHING_ON_CLOSE
+        );
+
+        // Panel หลัก
+        JPanel panel = new JPanel(null) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+
+                // พื้นหลังอวกาศตาม Stage ปัจจุบัน
+                Image bg = currentStage == 1
+                    ? stage1Background
+                    : stage2Background;
+
+                g.drawImage(bg, 0, 0, getWidth(), getHeight(), this);
+
+                // Overlay สีเข้ม
+                g.setColor(new Color(0, 5, 25, 200));
+                g.fillRect(0, 0, getWidth(), getHeight());
+
+                g.setFont(new Font("Arial", Font.BOLD, 30));
+                FontMetrics fm = g.getFontMetrics();
+                String title = "GAME PAUSED";
+
+                g.setColor(Color.WHITE);
+                g.drawString(
+                    title,
+                    (getWidth() - fm.stringWidth(title)) / 2,
+                    62
+                );
+            }
+        };
+
+        JButton resumeButton;
+        JButton restartButton;
+        JButton homeMenuButton;
+        Home home = new Home();
+        resumeButton = home.createButton(
+            "RESUME",
+            new Color(40, 170, 230)
+        );
+
+        restartButton = home.createButton(
+            "RESTART",
+            new Color(255, 65, 65)
+        );
+
+        homeMenuButton = home.createButton(
+            "HOME",
+            new Color(40, 170, 230)
+        );
+
+        resumeButton.setBounds(25, 135, 110, 50);
+        restartButton.setBounds(150, 135, 120, 50);
+        homeMenuButton.setBounds(285, 135, 110, 50);
+
+        panel.add(resumeButton);
+        panel.add(restartButton);
+        panel.add(homeMenuButton);
+
+        resumeButton.addActionListener(e -> {
+            paused = false;
+            pauseDialog.dispose();
+            repaint();
+        });
+
+        restartButton.addActionListener(e -> {
+            pauseDialog.dispose();
+            paused = false;
+            restartGame();
+        });
+
+        homeMenuButton.addActionListener(e -> {
+            pauseDialog.dispose();
+            paused = false;
+            timer.stop();
+
+            frame.setContentPane(new Home());
+            frame.pack();
+            frame.setLocationRelativeTo(null);
+            frame.revalidate();
+            frame.repaint();
+        });
+
+        pauseDialog.setContentPane(panel);
+        pauseDialog.setLocationRelativeTo(frame);
+
+        // กด X ให้กลับไปเล่นต่อ
+        pauseDialog.addWindowListener(
+            new java.awt.event.WindowAdapter() {
+                @Override
+                public void windowClosing(
+                    java.awt.event.WindowEvent e
+                ) {
+                    paused = false;
+                    pauseDialog.dispose();
+                }
+            }
+        );
+
+        pauseDialog.setVisible(true);
+    }
     @Override
     protected void paintComponent(Graphics g) { //paintComponent วาดสิ่งต่าง ๆ ลงบนหน้าจอ
         //Graphics g ปากกาวาด
@@ -164,12 +512,8 @@ public class GamePanel extends JPanel {
         //boss bullets
         g.setColor(Color.ORANGE);
         for(int i=0;i<bossBullets.size();i++){
-            g.fillRect(
-                bossBullets.get(i).x,
-                bossBullets.get(i).y,
-                bossBullets.get(i).width,
-                bossBullets.get(i).height
-            );
+            BossBullet bullet = bossBullets.get(i);
+            g.drawImage(bossBulletImage, bullet.x, bullet.y, bullet.width,bullet.height,this);
         }
         //Enemy
         g.setColor(Color.RED);
@@ -251,12 +595,47 @@ public class GamePanel extends JPanel {
             20,
             55
         );
-        g.setColor(Color.WHITE);
-        g.drawString(
-            "HP: " + playerHP + "/" + playerMaxHP,
-            650,
-            30
+        // Player HP Bar
+        int hpBarX = 20;
+        int hpBarY = panelH - 35;
+        int hpBarW = 150;
+        int hpBarH = 18;
+
+        // พื้นหลังหลอดเลือด
+        g.setColor(Color.DARK_GRAY);
+        g.fillRect(hpBarX, hpBarY, hpBarW, hpBarH);
+
+        // คำนวณความยาวหลอดเลือดตาม HP
+        double hpRatio = (double) playerHP / playerMaxHP;
+        hpRatio = Math.max(0, Math.min(1, hpRatio));
+
+        int currentHPWidth = (int)(hpBarW * hpRatio);
+
+        // สีเขียวเมื่อเลือดมาก สีเหลืองและแดงเมื่อเลือดต่ำ
+        if (hpRatio > 0.5) {
+            g.setColor(new Color(40, 230, 80));
+        }
+        else if (hpRatio > 0.25) {
+            g.setColor(Color.YELLOW);
+        }
+        else {
+            g.setColor(Color.RED);
+        }
+
+        g.fillRect(
+            hpBarX,
+            hpBarY,
+            currentHPWidth,
+            hpBarH
         );
+
+        // ขอบหลอดเลือด
+        g.setColor(Color.WHITE);
+        g.drawRect(hpBarX, hpBarY, hpBarW, hpBarH);
+
+        // ข้อความ HP ด้านซ้าย
+        g.setFont(new Font("Arial", Font.BOLD, 18));
+        g.drawString("HP", hpBarX, hpBarY - 7);
         if (bossWarning) {
             g.setColor(Color.RED);
             g.setFont(new Font("Arial", Font.BOLD, 40));
@@ -265,30 +644,6 @@ public class GamePanel extends JPanel {
                 130,
                 300
             );
-        }
-        if(stageClear){
-            g.setColor(Color.GREEN);
-            g.setFont(new Font("Arial", Font.BOLD, 40));
-            g.drawString("STAGE 1 CLEAR!", 250, 250);
-        }
-        if(gameWin){
-            g.setColor(Color.GREEN);
-            g.setFont(new Font("Arial",Font.BOLD,40));
-            g.drawString("VICTORY!", 320, 300);
-            
-            g.setColor(Color.WHITE);
-            g.setFont(new Font("Arial", Font.BOLD, 20));
-            g.drawString("PRESS R TO RESTART", 310, 380);
-        }
-        
-        if(gameOver){
-            g.setColor(Color.RED);
-            g.setFont(new Font("Arial",Font.BOLD,40));
-            g.drawString("DEFEATED", 300, 300);
-
-            g.setColor(Color.WHITE);
-            g.setFont(new Font("Arial", Font.BOLD, 20));
-            g.drawString("PRESS R TO RESTART", 298, 350);
         }
         if (bombEffect && currentBomb != null) {
             currentBomb.drawEffect(
@@ -313,6 +668,12 @@ public class GamePanel extends JPanel {
                 panelW,
                 panelH
             );
+        }
+        if (gameOver) {
+            drawGameOver(g);
+        }
+        else if (stageClear || gameWin) {
+            drawStageResult(g);
         }
     }
     //actions w,a,s,d
@@ -672,7 +1033,7 @@ public class GamePanel extends JPanel {
         }
         else if(currentStage == 2){
             deputyBoss = new DeputyBoss(30, 800, 2);
-            Deputyboss2 = new ImageIcon("images/Deputyboss2.png").getImage();
+            Deputyboss1 = new ImageIcon("images/Deputyboss2.png").getImage();
         }
         deputyBoss.x = panelW / 2 - deputyBoss.width / 2;
         deputyBoss.y = -deputyBoss.height;
@@ -733,9 +1094,62 @@ public class GamePanel extends JPanel {
             spawnBoss();
         }
     }
+    private void handleGameOver() {
+        gameOver = true;
+        playerHP = 0;
+        paused = false;
+
+        pauseButton.setVisible(false);
+        restartStageButton.setVisible(true);
+        stage2Button.setVisible(false);
+        homeButton.setVisible(true);
+
+        // จัดปุ่มให้อยู่ตรงกลาง
+        int buttonW = 200;
+        int buttonH = 50;
+        int gap = 30;
+        int startX = (panelW - (buttonW * 2 + gap)) / 2;
+        int buttonY = 620;
+
+        restartStageButton.setBounds(
+            startX, buttonY, buttonW, buttonH
+        );
+
+        homeButton.setBounds(
+            startX + buttonW + gap, buttonY, buttonW, buttonH
+        );
+
+        repaint();
+    }
+    private void handleBossDefeated() {
+        boss = null;
+        paused = false;
+        pauseButton.setVisible(false);
+        restartStageButton.setVisible(false);
+        if (currentStage == 1) {
+            stageClear = true;
+            gameWin = false;
+            stage2Button.setText("NEXT STAGE");
+            stage2Button.setVisible(true);
+            homeButton.setVisible(true);
+        }
+        else if (currentStage == 2) {
+            gameWin = true;
+            stageClear = false;
+            stage2Button.setVisible(false);
+            homeButton.setVisible(true);
+            homeButton.setBounds(
+                (panelW - 250) / 2,
+                640,
+                250,
+                65
+            );
+        }
+        repaint();
+    }
     //method update
     private void updateGame() {
-        if(gameOver||gameWin||stageClear){
+        if(gameOver||gameWin||stageClear||paused){
             return ;
         }
         spawnEnemy();
@@ -761,15 +1175,14 @@ public class GamePanel extends JPanel {
         if (deputyBoss != null && isColliding(deputyBoss)) {
             playerHP--;
             if (playerHP <= 0) {
-                playerHP = 0;
-                gameOver = true;
+                handleGameOver();
             }
         }
         if (boss != null && isColliding(boss)) {
             playerHP--;
 
             if (playerHP <= 0) {
-                gameOver = true;
+                handleGameOver();
             }
         }
         for (int i = bullets.size()-1;i>=0;i--) { //bullets + collsision
@@ -853,15 +1266,7 @@ public class GamePanel extends JPanel {
                     
                     // Boss ตาย
                     if (boss.isDead()) {
-                        if(currentStage==1){
-                            stageClear = true;
-                            boss = null;
-                            restartStageButton.setVisible(true);
-                            stage2Button.setVisible(true);
-                        }
-                        else if(currentStage==2){
-                            gameWin = true;
-                        }
+                        handleBossDefeated();
                     }
                 }
             }
@@ -875,8 +1280,7 @@ public class GamePanel extends JPanel {
                 bossBullets.remove(i);
                 playerHP--;
                 if(playerHP<=0){
-                    gameOver = true;
-                    playerHP = 0;
+                    handleGameOver();
                 }
                 continue;
             }
@@ -889,8 +1293,7 @@ public class GamePanel extends JPanel {
             if(isColliding(enemy)){//enemy ชน player
                 playerHP--;
                 if(playerHP<=0){
-                    playerHP=0;
-                    gameOver = true;
+                    handleGameOver();
                 }
                 enemies.remove(i);
                 continue;
@@ -908,7 +1311,6 @@ public class GamePanel extends JPanel {
                 // ถ้าเป็น HealthItem
                 if (item instanceof HealthItem) {
                     playerHP += item.applyEffect();
-
                     if (playerHP > playerMaxHP) {
                         playerHP = playerMaxHP;
                     }
@@ -954,15 +1356,7 @@ public class GamePanel extends JPanel {
                     }
                     // จัดการ Boss ที่ตาย
                     if (boss != null && boss.isDead()) {
-                        if (currentStage == 1) {
-                            stageClear = true;
-                            boss = null;
-                            restartStageButton.setVisible(true);
-                            stage2Button.setVisible(true);
-                        }
-                        else if (currentStage == 2) {
-                            gameWin = true;
-                        }
+                         handleBossDefeated();
                     }
                 }
                 else if(item instanceof BigBombItem){
@@ -999,16 +1393,7 @@ public class GamePanel extends JPanel {
                     }
                     // จัดการ Main Boss ที่ตาย
                     if (boss != null && boss.isDead()) {
-                        if (currentStage == 1) {
-                            stageClear = true;
-                            boss = null;
-                            restartStageButton.setVisible(true);
-                            stage2Button.setVisible(true);
-                        }
-                        else if (currentStage == 2) {
-                            gameWin = true;
-                            boss = null;
-                        }
+                        handleBossDefeated();
                     }
                 }
                 // ลบ Item หลังจากเก็บได้
@@ -1091,6 +1476,8 @@ public class GamePanel extends JPanel {
         bossWarning = false;
         // bossWarningDead = false;
 
+        homeButton.setVisible(false);
+        pauseButton.setVisible(true);
         restartStageButton.setVisible(false);
         stage2Button.setVisible(false);
     }
@@ -1138,7 +1525,10 @@ public class GamePanel extends JPanel {
         gameOver = false;
         gameWin = false;
         currentStage = restartGame;
+        stage2SpawnCount = 0;
         stageClear = false;
+        homeButton.setVisible(false);
+        pauseButton.setVisible(true);
 
         // Bullet
         bullets.clear();

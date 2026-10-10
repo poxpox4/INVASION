@@ -8,7 +8,7 @@ public class XEnemy extends Enemy {
         super(x, y);
         this.direction = direction;
         this.startY = y;
-        this.speed = 4;
+        this.speed = 5;
     }
 
     @Override
